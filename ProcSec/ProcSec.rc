@@ -1,0 +1,151 @@
+// Microsoft Visual C++ generated resource script.
+//
+#include "resource.h"
+
+#define APSTUDIO_READONLY_SYMBOLS
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 2 resource.
+//
+#include "winres.h"
+
+/////////////////////////////////////////////////////////////////////////////
+#undef APSTUDIO_READONLY_SYMBOLS
+
+/////////////////////////////////////////////////////////////////////////////
+// English (United States) resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)
+LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
+#pragma code_page(1252)
+
+#ifdef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// TEXTINCLUDE
+//
+
+1 TEXTINCLUDE 
+BEGIN
+    "resource.h\0"
+END
+
+2 TEXTINCLUDE 
+BEGIN
+    "#include ""winres.h""\r\n"
+    "\0"
+END
+
+3 TEXTINCLUDE 
+BEGIN
+    "\r\n"
+    "\0"
+END
+
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Menu
+//
+
+IDR_MENU1 MENU
+BEGIN
+    POPUP "File"
+    BEGIN
+        MENUITEM "Reload",                      ID_FILE_RELOAD
+        MENUITEM "About",                       ID_FILE_ABOUT
+    END
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog
+//
+
+IDD_DIALOG_PEB DIALOGEX 0, 0, 419, 137
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "PEB Information"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    DEFPUSHBUTTON   "OK",IDOK,362,116,50,14
+    LTEXT           "PEB Address:",IDC_STATIC,14,35,44,8
+    LTEXT           "BeingDebugged:",IDC_STATIC,14,48,54,8
+    LTEXT           "ImageBaseAddress:",IDC_STATIC,14,62,65,8
+    LTEXT           "Ldr:",IDC_STATIC,14,76,14,8
+    LTEXT           "ProcessParameters:",IDC_STATIC,14,89,65,8
+    LTEXT           "-",IDC_STATIC_PEB,61,35,351,8
+    LTEXT           "-",IDC_STATIC_BEINGDEBUGGED,70,48,257,8
+    LTEXT           "-",IDC_STATIC_IMAGEBASE,80,63,332,8
+    LTEXT           "-",IDC_STATIC_LDR,29,77,383,8
+    LTEXT           "-",IDC_STATIC_PARAMETER,81,89,331,22
+    LTEXT           "Process Name:",IDC_STATIC,14,10,48,8
+    LTEXT           "Process ID:",IDC_STATIC,14,22,38,8
+    LTEXT           "-",IDC_STATIC_PEB_PNAME,65,10,246,8
+    LTEXT           "-",IDC_STATIC_PEB_PID,54,23,268,8
+END
+
+IDD_DIALOG_PE DIALOGEX 0, 0, 495, 308
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "PE Information"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    CONTROL         "",IDC_TAB_PE,"SysTabControl32",0x0,0,0,495,308
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// DESIGNINFO
+//
+
+#ifdef APSTUDIO_INVOKED
+GUIDELINES DESIGNINFO
+BEGIN
+    IDD_DIALOG_PEB, DIALOG
+    BEGIN
+        LEFTMARGIN, 14
+        RIGHTMARGIN, 412
+        TOPMARGIN, 10
+        BOTTOMMARGIN, 130
+    END
+
+    IDD_DIALOG_PE, DIALOG
+    BEGIN
+    END
+END
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// AFX_DIALOG_LAYOUT
+//
+
+IDD_DIALOG_PEB AFX_DIALOG_LAYOUT
+BEGIN
+    0
+END
+
+IDD_DIALOG_PE AFX_DIALOG_LAYOUT
+BEGIN
+    0
+END
+
+#endif    // English (United States) resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+
+#ifndef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 3 resource.
+//
+
+
+/////////////////////////////////////////////////////////////////////////////
+#endif    // not APSTUDIO_INVOKED
+
