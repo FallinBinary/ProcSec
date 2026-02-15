@@ -1,4 +1,4 @@
-# ProcSec (process Security)
+# ProcSec (Process Security)
 
 ProcSec is a lightweight educational Windows tool for exploring running processes and learning Windows internals.
 
