@@ -188,7 +188,7 @@ INT_PTR CALLBACK PEDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 		/**********************************************************************************************/
 
 		// Initialize Tab 1
-		hTabDialogOptional = ::CreateWindowExW(0, L"STATIC", L"", WS_CHILD | WS_VISIBLE ,
+		hTabDialogOptional = ::CreateWindowExW(0, L"STATIC", L"", WS_CHILD | WS_VISIBLE,
 			rc.left, rc.top, rc.right - rc.left, rc.bottom - rc.top, hTab, 0, hInst, 0);
 
 		HWND hTabListViewOptional = ::CreateWindowExW(WS_EX_CLIENTEDGE, WC_LISTVIEW, L"", WS_CHILD | WS_VISIBLE | LVS_REPORT,
@@ -221,28 +221,32 @@ INT_PTR CALLBACK PEDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 
 		// Set Column for Tab 2
 		col.pszText = const_cast<LPWSTR>(L"DLL");
-		col.cx = 150;
+		col.cx = 160;
 		ListView_InsertColumn(hTabListViewImport, TAB_LV_IMPORT_DLLNAME, &col);
 
 		col.pszText = const_cast<LPWSTR>(L"Function");
-		col.cx = 200;
+		col.cx = 210;
 		ListView_InsertColumn(hTabListViewImport, TAB_LV_IMPORT_FUNCNAME, &col);
 
-		col.pszText = const_cast<LPWSTR>(L"Address");
-		col.cx = 200;
-		ListView_InsertColumn(hTabListViewImport, TAB_LV_IMPORT_FUNCADDR, &col);
+		col.pszText = const_cast<LPWSTR>(L"Ordinal");
+		col.cx = 75;
+		ListView_InsertColumn(hTabListViewImport, TAB_LV_IMPORT_FUNC_ORDINAL, &col);
 
 		/**********************************************************************************************/
-		
+
 		// Get Process Info (Process Name, PID)
-		WCHAR pId[16] = { 0 }, pName[MAX_PATH] = { 0 };
+		WCHAR pPath[MAX_PATH];
 		int index = ListView_GetNextItem(hList, -1, LVNI_SELECTED);
-		ListView_GetItemText(hList, index, LV_PID, pId, sizeof(pId));
-		ListView_GetItemText(hList, index, LV_PNAME, pName, sizeof(pName));
+		ListView_GetItemText(hList, index, LV_PATH, pPath, sizeof(pPath));
 
 		/**********************************************************************************************/
 
-		GetPeInfo(hTabListViewOptional, hTabListViewImport, pId, pName);
+		// TAB_HANDLES define in PEInformation.h
+		TAB_HANDLES tabHandles = { 0 };
+		tabHandles.hTabListViewOptional = hTabListViewOptional;
+		tabHandles.hTabListViewImport = hTabListViewImport;
+
+		GetPeInfo(&tabHandles, pPath);
 
 		break;
 	}

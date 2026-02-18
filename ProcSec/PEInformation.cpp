@@ -1,69 +1,61 @@
 #include "PEInformation.h"
 
 
-BOOL GetPeInfo(HWND hTabListViewOptional, HWND hTabListViewImport, LPWSTR pId, LPWSTR pName)
+BOOL GetPeInfo(PTAB_HANDLES pTabHandles, LPWSTR pPath)
 {
-	HMODULE hNtdll = ::LoadLibraryW(L"ntdll.dll");
-	if (hNtdll != NULL) {
-		NtQueryInformationProcess_t NtQueryInformationProcess = (NtQueryInformationProcess_t)::GetProcAddress(hNtdll, "NtQueryInformationProcess");
+	// Open file for read PE structure
+	HANDLE hFile = ::CreateFileW(pPath, GENERIC_READ, FILE_SHARE_READ, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
+	if (hFile == INVALID_HANDLE_VALUE) {
+		if (::GetLastError() == ERROR_ACCESS_DENIED)
+			::MessageBoxW(nullptr, L"Error: Access is denied.", L"Process Security", MB_OK | MB_ICONERROR);
+		else
+			ShowErrorWithLastError(L"CreateFile");
+		return FALSE;
+	}
 
-		::FreeLibrary(hNtdll);
-
-		HANDLE hProcess = ::OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, ::_wtoi(pId));
-		if (hProcess == NULL) {
-			if (::GetLastError() == ERROR_ACCESS_DENIED)
-				::MessageBoxW(nullptr, L"Error: Access is denied.", L"Process Security", MB_OK | MB_ICONERROR);
-			else
-				ShowErrorWithLastError(L"OpenProcess");
+	DWORD fileSize = ::GetFileSize(hFile, nullptr);
+	BYTE* fileBuff = (BYTE*)malloc(fileSize);
+	
+	if (fileBuff != NULL) {
+		DWORD read = 0;
+		if (::ReadFile(hFile, fileBuff, fileSize, &read, nullptr) == FALSE) {
+			ShowErrorWithLastError(L"Read file");
+			SecureCloseHandle(hFile);
 			return FALSE;
 		}
 
-		PROCESS_BASIC_INFORMATION pbi = { 0 };
-		ULONG nRetLen;
-		NtQueryInformationProcess(hProcess, ProcessBasicInformation, &pbi, sizeof(pbi), &nRetLen);
+		// Get NTHeader.OptionalHeader.Magic
+		WORD headerMagic = *(WORD*)(fileBuff + (*(DWORD*)&fileBuff[0x3C]) + sizeof(IMAGE_NT_HEADERS::Signature) + sizeof(IMAGE_NT_HEADERS::FileHeader));
 
-		PEB peb = { 0 };
-		IMAGE_DOS_HEADER dosHeader = { 0 };
-
-		if (pbi.PebBaseAddress != 0) {
-			::ReadProcessMemory(hProcess, pbi.PebBaseAddress, &peb, sizeof(peb), nullptr);
-			::ReadProcessMemory(hProcess, peb.ImageBaseAddress, &dosHeader, sizeof(dosHeader), nullptr);
-
-			BOOL isWow64 = FALSE;
-			BOOL res = ::IsWow64Process(hProcess, &isWow64);
-			if (isWow64) {
-				GetOptionalInfo32(hProcess, (BYTE*)peb.ImageBaseAddress, dosHeader, hTabListViewOptional);
-				GetImportInfo32(hProcess, (BYTE*)peb.ImageBaseAddress, dosHeader, hTabListViewImport);
-			}
-			else {
-				GetOptionalInfo64(hProcess, (BYTE*)peb.ImageBaseAddress, dosHeader, hTabListViewOptional);
-				GetImportInfo64(hProcess, (BYTE*)peb.ImageBaseAddress, dosHeader, hTabListViewImport);
-			}
+		if (headerMagic == IMAGE_NT_OPTIONAL_HDR32_MAGIC) {
+			GetOptionalInfo32(hFile, fileBuff, pTabHandles->hTabListViewOptional);
+			GetImportInfo32(hFile, fileBuff, pTabHandles->hTabListViewImport);
 		}
-
-		SecureCloseHandle(hProcess);
+		else {
+			GetOptionalInfo64(hFile, fileBuff, pTabHandles->hTabListViewOptional);
+			GetImportInfo64(hFile, fileBuff, pTabHandles->hTabListViewImport);
+		}
 	}
 
+	SecureCloseHandle(hFile);
 	return TRUE;
 }
 
 
-BOOL GetOptionalInfo64(HANDLE hProcess, BYTE* base, IMAGE_DOS_HEADER dosHeader, HWND hTabListViewOptional)
+BOOL GetOptionalInfo64(HANDLE hFile, PBYTE fileBuff, HWND hTabListViewOptional)
 {
-	IMAGE_NT_HEADERS64 ntHeader = { 0 };
-	::ReadProcessMemory(hProcess, (BYTE*)base + dosHeader.e_lfanew, &ntHeader, sizeof(ntHeader), nullptr);
-
-	IMAGE_OPTIONAL_HEADER64 optionalHeader = ntHeader.OptionalHeader;
-
-	int index = 0;
-	wchar_t value[64] = { 0 };
+	PIMAGE_NT_HEADERS64 ntHeader = (PIMAGE_NT_HEADERS64)((*(DWORD*)&fileBuff[0x3C]) + fileBuff);
+	IMAGE_OPTIONAL_HEADER64 optionalHeader = ntHeader->OptionalHeader;
+	
+	INT index = 0;
+	WCHAR value[64] = { 0 };
 
 	// SetItem
 	LVITEMW item = { 0 };
 	item.mask = LVIF_TEXT;
 
 	item.iItem = index;
-	::wsprintfW(value, L"0x%04X", optionalHeader.Magic);
+	::wsprintfW(value, L"%04X", optionalHeader.Magic);
 	item.pszText = const_cast<LPWSTR>(L"Magic");
 	ListView_InsertItem(hTabListViewOptional, &item);
 	ListView_SetItemText(hTabListViewOptional, index++, PE_LV_OPTIONAL_VALUE, const_cast<LPWSTR>(value));
@@ -111,7 +103,7 @@ BOOL GetOptionalInfo64(HANDLE hProcess, BYTE* base, IMAGE_DOS_HEADER dosHeader, 
 	ListView_SetItemText(hTabListViewOptional, index++, PE_LV_OPTIONAL_VALUE, const_cast<LPWSTR>(value));
 
 	item.iItem = index;
-	::wsprintfW(value, L"%X", optionalHeader.ImageBase);
+	::wsprintfW(value, L"%Ix", (void* __ptr64)optionalHeader.ImageBase);
 	item.pszText = const_cast<LPWSTR>(L"ImageBase");
 	ListView_InsertItem(hTabListViewOptional, &item);
 	ListView_SetItemText(hTabListViewOptional, index++, PE_LV_OPTIONAL_VALUE, const_cast<LPWSTR>(value));
@@ -240,22 +232,20 @@ BOOL GetOptionalInfo64(HANDLE hProcess, BYTE* base, IMAGE_DOS_HEADER dosHeader, 
 }
 
 
-BOOL GetOptionalInfo32(HANDLE hProcess, BYTE* base, IMAGE_DOS_HEADER dosHeader, HWND hTabListViewOptional)
+BOOL GetOptionalInfo32(HANDLE hFile, PBYTE fileBuff, HWND hTabListViewOptional)
 {
-	IMAGE_NT_HEADERS32 ntHeader = { 0 };
-	::ReadProcessMemory(hProcess, (BYTE*)base + dosHeader.e_lfanew, &ntHeader, sizeof(ntHeader), nullptr);
+	PIMAGE_NT_HEADERS32 ntHeader = (PIMAGE_NT_HEADERS32)((*(DWORD*)&fileBuff[0x3C]) + fileBuff);
+	IMAGE_OPTIONAL_HEADER32 optionalHeader = ntHeader->OptionalHeader;
 
-	IMAGE_OPTIONAL_HEADER32 optionalHeader = ntHeader.OptionalHeader;
-
-	int index = 0;
-	wchar_t value[64] = { 0 };
+	INT index = 0;
+	WCHAR value[64] = { 0 };
 
 	// SetItem
 	LVITEMW item = { 0 };
 	item.mask = LVIF_TEXT;
 
 	item.iItem = index;
-	::wsprintfW(value, L"0x%04X", optionalHeader.Magic);
+	::wsprintfW(value, L"%04X", optionalHeader.Magic);
 	item.pszText = const_cast<LPWSTR>(L"Magic");
 	ListView_InsertItem(hTabListViewOptional, &item);
 	ListView_SetItemText(hTabListViewOptional, index++, PE_LV_OPTIONAL_VALUE, const_cast<LPWSTR>(value));
@@ -303,7 +293,13 @@ BOOL GetOptionalInfo32(HANDLE hProcess, BYTE* base, IMAGE_DOS_HEADER dosHeader, 
 	ListView_SetItemText(hTabListViewOptional, index++, PE_LV_OPTIONAL_VALUE, const_cast<LPWSTR>(value));
 
 	item.iItem = index;
-	::wsprintfW(value, L"%X", optionalHeader.ImageBase);
+	::wsprintfW(value, L"%X", optionalHeader.BaseOfData);
+	item.pszText = const_cast<LPWSTR>(L"BaseOfData");
+	ListView_InsertItem(hTabListViewOptional, &item);
+	ListView_SetItemText(hTabListViewOptional, index++, PE_LV_OPTIONAL_VALUE, const_cast<LPWSTR>(value));
+
+	item.iItem = index;
+	::wsprintfW(value, L"%Ix", (void* __ptr32)optionalHeader.ImageBase);
 	item.pszText = const_cast<LPWSTR>(L"ImageBase");
 	ListView_InsertItem(hTabListViewOptional, &item);
 	ListView_SetItemText(hTabListViewOptional, index++, PE_LV_OPTIONAL_VALUE, const_cast<LPWSTR>(value));
@@ -432,115 +428,120 @@ BOOL GetOptionalInfo32(HANDLE hProcess, BYTE* base, IMAGE_DOS_HEADER dosHeader, 
 }
 
 
-BOOL GetImportInfo64(HANDLE hProcess, BYTE* base, IMAGE_DOS_HEADER dosHeader, HWND  hTabListViewImport)
+BOOL GetImportInfo64(HANDLE hFile, PBYTE fileBuff, HWND  hTabListViewImport)
 {
-	IMAGE_DATA_DIRECTORY importDir = { 0 };
-	IMAGE_IMPORT_DESCRIPTOR importDesc = { 0 };
-	IMAGE_NT_HEADERS64 ntHeader = { 0 };
-	CHAR dllName[256] = { 0 };
-	CHAR funcName[256] = { 0 };
-	int index = 0;
+	PIMAGE_NT_HEADERS64   ntHeader = (PIMAGE_NT_HEADERS64)((*(DWORD*)&fileBuff[0x3C]) + fileBuff);
+	PIMAGE_SECTION_HEADER sec = IMAGE_FIRST_SECTION(ntHeader);
+	IMAGE_DATA_DIRECTORY  importDir = ntHeader->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT];
 
-	::ReadProcessMemory(hProcess, (BYTE*)base + dosHeader.e_lfanew, &ntHeader, sizeof(ntHeader), nullptr);
-	importDir = ntHeader.OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT]; // .idata Section
 	if (!importDir.VirtualAddress)
 		return FALSE; // No Import!
 
-	BYTE* descAddr = (BYTE*)base + importDir.VirtualAddress;
+	DWORD offset = 0;
+
+	// Search for .idata section
+	for (size_t i = 0; i < ntHeader->FileHeader.NumberOfSections; i++, sec++) {
+		DWORD start = sec->VirtualAddress;
+		DWORD end = start + sec->SizeOfRawData;
+
+		if (importDir.VirtualAddress >= start && importDir.VirtualAddress <= end) {
+			offset = importDir.VirtualAddress - start + sec->PointerToRawData;
+			break;
+		}
+	}
+
+	int index = 0;
 
 	for (;;) {
-		::ReadProcessMemory(hProcess, descAddr, &importDesc, sizeof(importDesc), nullptr);
-		if (!importDesc.Name) break;
-		::ReadProcessMemory(hProcess, (BYTE*)base + importDesc.Name, dllName, sizeof(dllName), nullptr);
+		PIMAGE_IMPORT_DESCRIPTOR importDesc = (PIMAGE_IMPORT_DESCRIPTOR)(fileBuff + offset);
+
+		CHAR* dllName = (CHAR*)(fileBuff + (importDesc->Name - sec->VirtualAddress + sec->PointerToRawData));
+
+		if (importDesc->OriginalFirstThunk == 0 && importDesc->FirstThunk == 0) break;
 
 		// Convert Ascii to Wide
 		std::wstring ws(dllName, dllName + ::strlen(dllName));
 		const wchar_t* wDllName = ws.c_str();
 
-		BYTE* thunk = (BYTE*)base + importDesc.OriginalFirstThunk;
-		BYTE* iat = (BYTE*)base + importDesc.FirstThunk;
+		PIMAGE_THUNK_DATA64 iatData = (PIMAGE_THUNK_DATA64)(fileBuff + (importDesc->FirstThunk - sec->VirtualAddress + sec->PointerToRawData));
+		PIMAGE_IMPORT_BY_NAME impName = (PIMAGE_IMPORT_BY_NAME)(fileBuff + (iatData->u1.AddressOfData - sec->VirtualAddress + sec->PointerToRawData));
 
-		for (;;) {
-			DWORD64 thunkData = 0;
-			DWORD64 iatData   = 0;
+		for (;; iatData++, index++) {
 
-			::ReadProcessMemory(hProcess, thunk, &thunkData, sizeof(thunkData), nullptr);
-			if (!thunkData) break;
+			PIMAGE_IMPORT_BY_NAME impName = (PIMAGE_IMPORT_BY_NAME)(fileBuff + (iatData->u1.AddressOfData - sec->VirtualAddress + sec->PointerToRawData));
 
-			::ReadProcessMemory(hProcess, (BYTE*)base + thunkData + 2, funcName, sizeof(funcName), nullptr);
-			::ReadProcessMemory(hProcess, iat, &iatData, sizeof(iatData), nullptr);
+			if (!iatData->u1.AddressOfData) break;
 
-			// Convert Ascii to Wide
-			std::wstring ws(funcName, funcName + strlen(funcName));
-			const wchar_t* wFuncName = ws.c_str();
-
-			wchar_t funcAddr[64] = { 0 };
-			::wsprintfW(funcAddr, L"0x%p", iatData);
-			
 			// SetItem
 			LVITEMW item = { 0 };
 			item.mask = LVIF_TEXT;
 			item.iItem = index;
 			item.pszText = const_cast<LPWSTR>(wDllName);
 			ListView_InsertItem(hTabListViewImport, &item);
-			ListView_SetItemText(hTabListViewImport, index, PE_LV_IMPORT_FUNCNAME, const_cast<LPWSTR>(wFuncName));
-			ListView_SetItemText(hTabListViewImport, index, PE_LV_IMPORT_FUNCADDR, const_cast<LPWSTR>(funcAddr));
 
-			index++;
-			thunk += sizeof(DWORD64);
-			iat   += sizeof(DWORD64);
+			if (!(iatData->u1.Ordinal & IMAGE_ORDINAL_FLAG64)) {
+				// Convert Ascii to Wide
+				std::wstring ws(impName->Name, impName->Name + strlen(impName->Name));
+				const wchar_t* wFuncName = ws.c_str();
+				ListView_SetItemText(hTabListViewImport, index, PE_LV_IMPORT_FUNCNAME, const_cast<LPWSTR>(wFuncName));
+				ListView_SetItemText(hTabListViewImport, index, PE_LV_IMPORT_FUNC_ORDINAL, const_cast<LPWSTR>(L"-"));
+			}
+			else {
+				wchar_t funcOrdinal[16] = { 0 };
+				wsprintfW(funcOrdinal, L"%X", ((iatData->u1.Ordinal) & 0x0FFFFFFFFFFFFFFF));
+				ListView_SetItemText(hTabListViewImport, index, PE_LV_IMPORT_FUNC_ORDINAL, const_cast<LPWSTR>(funcOrdinal));
+				ListView_SetItemText(hTabListViewImport, index, PE_LV_IMPORT_FUNCNAME, const_cast<LPWSTR>(L"-"));
+			}
 		}
-		descAddr += sizeof(IMAGE_IMPORT_DESCRIPTOR);
+		offset += sizeof(IMAGE_IMPORT_DESCRIPTOR);
 	}
 	return TRUE;
 }
 
 
-BOOL GetImportInfo32(HANDLE hProcess, BYTE* base, IMAGE_DOS_HEADER dosHeader, HWND  hTabListViewImport)
+BOOL GetImportInfo32(HANDLE hFile, PBYTE fileBuff, HWND  hTabListViewImport)
 {
-	IMAGE_DATA_DIRECTORY importDir = { 0 };
-	IMAGE_IMPORT_DESCRIPTOR importDesc = { 0 };
-	IMAGE_NT_HEADERS32 ntHeader = { 0 };
-	CHAR dllName[256] = { 0 };
-	CHAR funcName[256] = { 0 };
-	int index = 0;
+	PIMAGE_NT_HEADERS32   ntHeader  = (PIMAGE_NT_HEADERS32)((*(DWORD*)&fileBuff[0x3C]) + fileBuff);
+	PIMAGE_SECTION_HEADER sec       = IMAGE_FIRST_SECTION(ntHeader);
+	IMAGE_DATA_DIRECTORY  importDir = ntHeader->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT];
 
-	::ReadProcessMemory(hProcess, (BYTE*)base + dosHeader.e_lfanew, &ntHeader, sizeof(ntHeader), nullptr);
-	importDir = ntHeader.OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT]; // .idata Section
 	if (!importDir.VirtualAddress)
 		return FALSE; // No Import!
 
-	BYTE* descAddr = (BYTE*)base + importDir.VirtualAddress;
+	DWORD offset = 0;
+
+	// Search for .idata section
+	for (size_t i = 0; i < ntHeader->FileHeader.NumberOfSections; i++, sec++) {
+		DWORD start = sec->VirtualAddress;
+		DWORD end = start + sec->SizeOfRawData;
+
+		if (importDir.VirtualAddress >= start && importDir.VirtualAddress <= end) {
+			offset = importDir.VirtualAddress - start + sec->PointerToRawData;
+			break;
+		}
+	}
+
+	int index = 0;
 
 	for (;;) {
-		::ReadProcessMemory(hProcess, descAddr, &importDesc, sizeof(importDesc), nullptr);
-		if (!importDesc.Name) break;
-		::ReadProcessMemory(hProcess, (BYTE*)base + importDesc.Name, dllName, sizeof(dllName), nullptr);
+		PIMAGE_IMPORT_DESCRIPTOR importDesc = (PIMAGE_IMPORT_DESCRIPTOR)(fileBuff + offset);
+
+		CHAR* dllName = (CHAR*)(fileBuff + (importDesc->Name - sec->VirtualAddress + sec->PointerToRawData));
+
+		if (importDesc->OriginalFirstThunk == 0 && importDesc->FirstThunk == 0) break;
 
 		// Convert Ascii to Wide
-		std::wstring ws(dllName, dllName + strlen(dllName));
+		std::wstring ws(dllName, dllName + ::strlen(dllName));
 		const wchar_t* wDllName = ws.c_str();
 
-		// thunk is a pointer
-		BYTE* thunk = (BYTE*)base + importDesc.OriginalFirstThunk;
-		BYTE* iat = (BYTE*)base + importDesc.FirstThunk;
+		PIMAGE_THUNK_DATA32 iatData = (PIMAGE_THUNK_DATA32)(fileBuff + (importDesc->FirstThunk - sec->VirtualAddress + sec->PointerToRawData));
+		PIMAGE_IMPORT_BY_NAME impName = (PIMAGE_IMPORT_BY_NAME)(fileBuff + (iatData->u1.AddressOfData - sec->VirtualAddress + sec->PointerToRawData));
 
-		for (;;) {
-			DWORD32 thunkData = 0;
-			DWORD32 iatData = 0;
+		for (;; iatData++, index++) {
 
-			::ReadProcessMemory(hProcess, thunk, &thunkData, sizeof(thunkData), nullptr);
-			if (!thunkData) break;
+			PIMAGE_IMPORT_BY_NAME impName = (PIMAGE_IMPORT_BY_NAME)(fileBuff + (iatData->u1.AddressOfData - sec->VirtualAddress + sec->PointerToRawData));
 
-			::ReadProcessMemory(hProcess, (BYTE*)base + thunkData + 2, funcName, sizeof(funcName), nullptr);
-			::ReadProcessMemory(hProcess, iat, &iatData, sizeof(iatData), nullptr);
-
-			// Convert Ascii to Wide
-			std::wstring ws(funcName, funcName + strlen(funcName));
-			const wchar_t* wFuncName = ws.c_str();
-
-			wchar_t funcAddr[64] = { 0 };
-			::wsprintfW(funcAddr, L"0x%p", iatData);
+			if (!iatData->u1.AddressOfData) break;
 
 			// SetItem
 			LVITEMW item = { 0 };
@@ -548,24 +549,22 @@ BOOL GetImportInfo32(HANDLE hProcess, BYTE* base, IMAGE_DOS_HEADER dosHeader, HW
 			item.iItem = index;
 			item.pszText = const_cast<LPWSTR>(wDllName);
 			ListView_InsertItem(hTabListViewImport, &item);
-			ListView_SetItemText(hTabListViewImport, index, PE_LV_IMPORT_FUNCNAME, const_cast<LPWSTR>(wFuncName));
-			ListView_SetItemText(hTabListViewImport, index, PE_LV_IMPORT_FUNCADDR, const_cast<LPWSTR>(funcAddr));
 
-			index++;
-			thunk += sizeof(DWORD32);
-			iat += sizeof(DWORD32);
+			if (!(iatData->u1.Ordinal & IMAGE_ORDINAL_FLAG32)) {
+				// Convert Ascii to Wide
+				std::wstring ws(impName->Name, impName->Name + strlen(impName->Name));
+				const wchar_t* wFuncName = ws.c_str();
+				ListView_SetItemText(hTabListViewImport, index, PE_LV_IMPORT_FUNCNAME, const_cast<LPWSTR>(wFuncName));
+				ListView_SetItemText(hTabListViewImport, index, PE_LV_IMPORT_FUNC_ORDINAL, const_cast<LPWSTR>(L"-"));
+			}
+			else {
+				wchar_t funcOrdinal[16] = { 0 };
+				wsprintfW(funcOrdinal, L"%X", ((iatData->u1.Ordinal) & 0x0FFFFFFF));
+				ListView_SetItemText(hTabListViewImport, index, PE_LV_IMPORT_FUNC_ORDINAL, const_cast<LPWSTR>(funcOrdinal));
+				ListView_SetItemText(hTabListViewImport, index, PE_LV_IMPORT_FUNCNAME, const_cast<LPWSTR>(L"-"));
+			}
 		}
-		descAddr += sizeof(IMAGE_IMPORT_DESCRIPTOR);
+		offset += sizeof(IMAGE_IMPORT_DESCRIPTOR);
 	}
 	return TRUE;
-}
-
-
-BOOL IsProcess64(HANDLE hProcess)
-{
-	USHORT p, m;
-	if (!::IsWow64Process2(hProcess, &p, &m))
-		return FALSE;
-
-	return (m == IMAGE_FILE_MACHINE_AMD64);
 }

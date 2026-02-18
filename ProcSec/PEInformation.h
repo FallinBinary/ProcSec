@@ -4,11 +4,17 @@
 
 #define PE_LV_OPTIONAL_VALUE 1
 #define PE_LV_IMPORT_FUNCNAME 1
-#define PE_LV_IMPORT_FUNCADDR 2
+#define PE_LV_IMPORT_FUNC_ORDINAL 2
 
-BOOL GetPeInfo(HWND hTabListViewOptional, HWND hTabListViewImport, LPWSTR pId, LPWSTR pName);
-BOOL GetOptionalInfo64(HANDLE hProcess, BYTE* base, IMAGE_DOS_HEADER dosHeader, HWND hTabListViewOptional);
-BOOL GetOptionalInfo32(HANDLE hProcess, BYTE* base, IMAGE_DOS_HEADER dosHeader, HWND hTabListViewOptional);
-BOOL GetImportInfo64(HANDLE hProcess, BYTE* base, IMAGE_DOS_HEADER dosHeader, HWND hTabListViewImport);
-BOOL GetImportInfo32(HANDLE hProcess, BYTE* base, IMAGE_DOS_HEADER dosHeader, HWND hTabListViewImport);
-BOOL IsProcess64(HANDLE hProcess);
+typedef struct _TAB_HANDLES {
+	HWND hTabListViewOptional;
+	HWND hTabListViewImport;
+} TAB_HANDLES, *PTAB_HANDLES;
+
+BOOL GetPeInfo(PTAB_HANDLES pTabHandles, LPWSTR pPath);
+
+BOOL GetOptionalInfo64(HANDLE hFile, PBYTE fileBuff, HWND hTabListViewOptional);
+BOOL GetOptionalInfo32(HANDLE hFile, PBYTE fileBuff, HWND hTabListViewOptional);
+
+BOOL GetImportInfo64(HANDLE hFile, PBYTE fileBuff, HWND  hTabListViewImport);
+BOOL GetImportInfo32(HANDLE hFile, PBYTE fileBuff, HWND  hTabListViewImport);
