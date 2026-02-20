@@ -79,6 +79,33 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			::TrackPopupMenu(hPopupMenu, TPM_LEFTALIGN | TPM_TOPALIGN, pt.x, pt.y, 0, hWnd, nullptr);
 			::DestroyMenu(hPopupMenu);
 		}
+
+		else if (hdr->hwndFrom == hList && hdr->code == LVN_COLUMNCLICK) {
+			NMLISTVIEW* pnmlv = (NMLISTVIEW*)lParam;
+			
+			if (g_SortColumn == pnmlv->iSubItem) {
+				g_SortState++;
+				if (g_SortState > 2)
+					g_SortState = 0;
+			}
+			else {
+				g_SortColumn = pnmlv->iSubItem;
+				g_SortState = 1;
+			}
+
+			if (g_SortState == 0)
+				ListView_SortItems(hList, CompareOriginal, 0);
+			else
+				ListView_SortItems(hList, CompareFunc, g_SortColumn);
+		}
+
+		else if (hdr->hwndFrom == hList && hdr->code == LVM_DELETEITEM) {
+			NMLISTVIEW* pnmlv = (NMLISTVIEW*)lParam;
+			PPROC_ITEM data = (PPROC_ITEM)pnmlv->lParam;
+			if (data)
+				free(data);
+		}
+
 		break;
 	}
 
@@ -336,10 +363,17 @@ void AddItem(HWND hList, int index, PPROCESSENTRY32W pe, wchar_t* path, PMITIGAT
 	else ::wsprintfW(szCFG, L"%ws", (m->ControlFlowGuardPolicy == 1 ? L"CFG" : L""));
 
 	// Set Items
+	PPROC_ITEM data = (PPROC_ITEM)malloc(sizeof(PROC_ITEM));
+	::wcscpy_s(data->name, pe->szExeFile);
+	data->pid = pe->th32ProcessID;
+	data->ppid = pe->th32ParentProcessID;
+	data->originalIndex = index;
+
 	LVITEMW item = { 0 };
-	item.mask = LVIF_TEXT;
+	item.mask = LVIF_TEXT | LVIF_PARAM;
 	item.iItem = index;
 	item.pszText = pe->szExeFile;
+	item.lParam = (LPARAM)data;
 
 	ListView_InsertItem(hList, &item);
 	ListView_SetItemText(hList, index, LV_PID, szPid);
@@ -391,4 +425,45 @@ void GetProcessList(HWND hList)
 
 	if (hSnapshot != NULL)
 		SecureCloseHandle(hSnapshot);
+}
+
+
+int CALLBACK CompareFunc(LPARAM lParam1, LPARAM lParam2, LPARAM lParamSort)
+{
+	PPROC_ITEM p1 = (PPROC_ITEM)lParam1;
+	PPROC_ITEM p2 = (PPROC_ITEM)lParam2;
+
+	int column = (int)lParamSort;
+	int result = 0;
+
+	switch (column)
+	{
+	case LV_PNAME:
+		result = wcscmp(p1->name, p2->name); break;
+		
+	case LV_PID:
+		result = (int)(p1->pid - p2->pid); break;
+
+	case LV_PPID:
+		result = (int)(p1->ppid = p2->ppid); break;
+	}
+
+	if (g_SortState == 2) // Descending
+		result = -result;
+
+	return result;
+}
+
+
+int CALLBACK CompareOriginal(LPARAM lParam1, LPARAM lParam2, LPARAM lParamSort)
+{
+	PPROC_ITEM p1 = (PPROC_ITEM)lParam1;
+	PPROC_ITEM p2 = (PPROC_ITEM)lParam2;
+
+	if (p1->originalIndex < p2->originalIndex)
+		return -1;
+	if (p1->originalIndex > p2->originalIndex)
+		return 1;
+
+	return 0;
 }
