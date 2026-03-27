@@ -14,13 +14,14 @@ BOOL GetPeInfo(PTAB_HANDLES pTabHandles, LPWSTR pPath)
 	}
 
 	DWORD fileSize = ::GetFileSize(hFile, nullptr);
-	BYTE* fileBuff = (BYTE*)malloc(fileSize);
+	BYTE* fileBuff = (BYTE*)::malloc(fileSize);
 	
 	if (fileBuff != NULL) {
 		DWORD read = 0;
 		if (::ReadFile(hFile, fileBuff, fileSize, &read, nullptr) == FALSE) {
 			ShowErrorWithLastError(L"Read file");
 			SecureCloseHandle(hFile);
+			::free(fileBuff);
 			return FALSE;
 		}
 
@@ -38,6 +39,7 @@ BOOL GetPeInfo(PTAB_HANDLES pTabHandles, LPWSTR pPath)
 	}
 
 	SecureCloseHandle(hFile);
+	::free(hFile);
 	return TRUE;
 }
 
