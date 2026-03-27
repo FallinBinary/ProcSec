@@ -1,7 +1,7 @@
 #include "main.h"
 
 
-int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, int nCmdShow)
+int WINAPI wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ LPWSTR lpCmdLine, _In_ int nCmdShow)
 {
 	UNREFERENCED_PARAMETER(hPrevInstance);
 	UNREFERENCED_PARAMETER(lpCmdLine);
@@ -72,6 +72,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			::AppendMenuW(hPopupMenu, MF_STRING, PM_PEB_INFO, L"PEB Information");
 			::AppendMenuW(hPopupMenu, MF_STRING, PM_PE_INFO, L"PE Information");
 			::AppendMenuW(hPopupMenu, MF_STRING, PM_DUMP, L"Create Dump");
+			::AppendMenuW(hPopupMenu, MF_STRING, PM_INJECT, L"Inject DLL");
 
 			POINT pt = { 0 };
 
@@ -139,6 +140,15 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 			break;
 		}
+
+		case PM_INJECT: {
+			WCHAR pId[16] = { 0 }, pName[MAX_PATH] = { 0 };
+			int index = ListView_GetNextItem(hList, -1, LVNI_SELECTED);
+			ListView_GetItemText(hList, index, LV_PID, pId, sizeof(pId));
+
+			DllInjection(_wtoi(pId)); break;
+		}
+
 		case ID_FILE_RELOAD:
 			ListView_DeleteAllItems(hList);
 			GetProcessList(hList);

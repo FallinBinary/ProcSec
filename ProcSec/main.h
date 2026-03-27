@@ -8,6 +8,7 @@
 #include "PEBInformation.h"
 #include "PEInformation.h"
 #include "Dump.h"
+#include "InjectDll.h"
 
 #pragma comment(lib, "comctl32.lib")
 
@@ -25,6 +26,7 @@
 #define PM_PEB_INFO 100
 #define PM_PE_INFO  200
 #define PM_DUMP     300
+#define PM_INJECT	400
 /* Tab Macro */
 #define TAB1 1000
 #define TAB2 2000
