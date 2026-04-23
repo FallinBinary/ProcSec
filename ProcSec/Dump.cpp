@@ -46,5 +46,7 @@ BOOL CreateDump(LPWSTR pId, LPWSTR fileName)
 	}
 
 	::MessageBoxW(nullptr, L"Process Dump Completed Successfully.", L"Process Security", MB_OK | MB_ICONINFORMATION);
+	SecureCloseHandle(hFile);
+	SecureCloseHandle(hProcess);
 	return TRUE;
 }
