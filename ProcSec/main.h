@@ -50,14 +50,15 @@ void AddColumns(HWND hList);
 void AddItem(HWND hList, int index, PPROCESSENTRY32W pe, wchar_t* path, PMITIGATION m, PPROTECTION p, PUSERINFO u);
 void GetProcessList(HWND hList);
 void SetColor(LPNMLVCUSTOMDRAW plvcd);
+void ShowPopupMenu(HWND hWnd);
 
 
 /* Global Variables */
-HINSTANCE hInst;
-HWND hList;
-HWND hTabDialogOptional;
-HWND hTabDialogImport;
-HWND hTab;
+HINSTANCE g_hInst;
+HWND g_hList;
+HWND g_hTabDialogOptional;
+HWND g_hTabDialogImport;
+HWND g_hTab;
 
 int g_PreviousSortColumn = -1;
 int g_SortColumn = -1;

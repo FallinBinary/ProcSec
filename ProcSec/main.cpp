@@ -6,7 +6,7 @@ int WINAPI wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, 
 	UNREFERENCED_PARAMETER(hPrevInstance);
 	UNREFERENCED_PARAMETER(lpCmdLine);
 
-	hInst = hInstance;
+	g_hInst = hInstance;
 
 	WNDCLASSEXW wcex = { 0 };
 
@@ -48,18 +48,18 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		SetDebugPrivilege();
 		::InitCommonControls();
 
-		hList = ::CreateWindowExW(WS_EX_CLIENTEDGE, WC_LISTVIEWW, L"",
+		g_hList = ::CreateWindowExW(WS_EX_CLIENTEDGE, WC_LISTVIEWW, L"",
 			WS_CHILD | WS_VISIBLE | LVS_REPORT | LVS_SINGLESEL | LVS_SHOWSELALWAYS,
 			CW_USEDEFAULT, 0, CW_USEDEFAULT, 0, hWnd, (HMENU)IDC_MAIN_LIST, ((LPCREATESTRUCT)lParam)->hInstance, nullptr);
 
-		ListView_SetExtendedListViewStyle(hList, LVS_EX_FULLROWSELECT);
+		ListView_SetExtendedListViewStyle(g_hList, LVS_EX_FULLROWSELECT);
 
-		AddColumns(hList);
-		GetProcessList(hList);
+		AddColumns(g_hList);
+		GetProcessList(g_hList);
 		break;
 
 	case WM_SIZE:
-		::MoveWindow(hList, 0, 0, LOWORD(lParam), HIWORD(lParam), TRUE);
+		::MoveWindow(g_hList, 0, 0, LOWORD(lParam), HIWORD(lParam), TRUE);
 		break;
 
 	case WM_NOTIFY: {
@@ -78,25 +78,12 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			}
 		}
 
-		if (hdr->hwndFrom == hList && hdr->code == NM_RCLICK) {
+		if (hdr->hwndFrom == g_hList && hdr->code == NM_RCLICK)
+			ShowPopupMenu(hWnd);
 
-			HMENU hPopupMenu = ::CreatePopupMenu();
-
-			::AppendMenuW(hPopupMenu, MF_STRING, PM_PEB_INFO, L"PEB Information");
-			::AppendMenuW(hPopupMenu, MF_STRING, PM_PE_INFO, L"PE Information");
-			::AppendMenuW(hPopupMenu, MF_STRING, PM_DUMP, L"Create Dump");
-			::AppendMenuW(hPopupMenu, MF_STRING, PM_INJECT, L"Inject DLL");
-
-			POINT pt = { 0 };
-
-			::GetCursorPos(&pt);
-			::TrackPopupMenu(hPopupMenu, TPM_LEFTALIGN | TPM_TOPALIGN, pt.x, pt.y, 0, hWnd, nullptr);
-			::DestroyMenu(hPopupMenu);
-		}
-
-		else if (hdr->hwndFrom == hList && hdr->code == LVN_COLUMNCLICK) {
+		else if (hdr->hwndFrom == g_hList && hdr->code == LVN_COLUMNCLICK) {
 			NMLISTVIEW* pnmlv = (NMLISTVIEW*)lParam;
-			HWND hHeader = ListView_GetHeader(hList);
+			HWND hHeader = ListView_GetHeader(g_hList);
 			HDITEM hdi = { 0 };
 			hdi.mask = HDI_FORMAT;
 			
@@ -123,10 +110,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 				}
 
 				if (g_SortState == 0)
-					ListView_SortItems(hList, CompareOriginal, 0);
+					ListView_SortItems(g_hList, CompareOriginal, 0);
 
 				else {
-					ListView_SortItems(hList, CompareFunc, g_SortColumn);
+					ListView_SortItems(g_hList, CompareFunc, g_SortColumn);
 					if (g_SortState == 1)
 						hdi.fmt |= HDF_SORTUP;
 					else if (g_SortState == 2)
@@ -138,7 +125,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			}
 		}
 
-		else if (hdr->hwndFrom == hList && hdr->code == LVM_DELETEITEM) {
+		else if (hdr->hwndFrom == g_hList && hdr->code == LVM_DELETEITEM) {
 			NMLISTVIEW* pnmlv = (NMLISTVIEW*)lParam;
 			PPROC_ITEM data = (PPROC_ITEM)pnmlv->lParam;
 			if (data)
@@ -152,20 +139,20 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		switch (LOWORD(wParam))
 		{
 		case PM_PEB_INFO:
-			::DialogBoxW(hInst, MAKEINTRESOURCE(IDD_DIALOG_PEB), hWnd, PEBDialog);
+			::DialogBoxW(g_hInst, MAKEINTRESOURCE(IDD_DIALOG_PEB), hWnd, PEBDialog);
 			break;
 
 		case PM_PE_INFO:
-			::DialogBoxW(hInst, MAKEINTRESOURCE(IDD_DIALOG_PE), hWnd, PEDialog);
+			::DialogBoxW(g_hInst, MAKEINTRESOURCE(IDD_DIALOG_PE), hWnd, PEDialog);
 			break;
 
 		case PM_DUMP: {
 			WCHAR pId[16] = { 0 }, pName[MAX_PATH] = { 0 };
 
-			int index = ListView_GetNextItem(hList, -1, LVNI_SELECTED);
+			int index = ListView_GetNextItem(g_hList, -1, LVNI_SELECTED);
 			
-			ListView_GetItemText(hList, index, LV_PID, pId, sizeof(pId));
-			ListView_GetItemText(hList, index, LV_PNAME, pName, sizeof(pName));
+			ListView_GetItemText(g_hList, index, LV_PID, pId, sizeof(pId));
+			ListView_GetItemText(g_hList, index, LV_PNAME, pName, sizeof(pName));
 
 			// Convert .exe to .dmp extention
 			WCHAR* dot = ::wcsrchr(pName, L'.');
@@ -181,15 +168,15 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 		case PM_INJECT: {
 			WCHAR pId[16] = { 0 }, pName[MAX_PATH] = { 0 };
-			int index = ListView_GetNextItem(hList, -1, LVNI_SELECTED);
-			ListView_GetItemText(hList, index, LV_PID, pId, sizeof(pId));
+			int index = ListView_GetNextItem(g_hList, -1, LVNI_SELECTED);
+			ListView_GetItemText(g_hList, index, LV_PID, pId, sizeof(pId));
 
 			DllInjection(_wtoi(pId)); break;
 		}
 
 		case ID_FILE_RELOAD:
-			ListView_DeleteAllItems(hList);
-			GetProcessList(hList);
+			ListView_DeleteAllItems(g_hList);
+			GetProcessList(g_hList);
 			break;
 
 		case ID_FILE_ABOUT:
@@ -215,10 +202,10 @@ INT_PTR CALLBACK PEBDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
 	case WM_INITDIALOG: {
 		WCHAR pId[16] = { 0 }, pName[MAX_PATH] = { 0 };
 
-		int index = ListView_GetNextItem(hList, -1, LVNI_SELECTED);
+		int index = ListView_GetNextItem(g_hList, -1, LVNI_SELECTED);
 
-		ListView_GetItemText(hList, index, LV_PID, pId, sizeof(pId));
-		ListView_GetItemText(hList, index, LV_PNAME, pName, sizeof(pName));
+		ListView_GetItemText(g_hList, index, LV_PID, pId, sizeof(pId));
+		ListView_GetItemText(g_hList, index, LV_PNAME, pName, sizeof(pName));
 
 		GetPebInfo(hDlg, pId, pName);
 
@@ -244,30 +231,30 @@ INT_PTR CALLBACK PEDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 	switch (message)
 	{
 	case WM_INITDIALOG: {
-		hTab = ::GetDlgItem(hDlg, IDC_TAB_PE);
+		g_hTab= ::GetDlgItem(hDlg, IDC_TAB_PE);
 		TCITEMW ti = { 0 };
 		ti.mask = TCIF_TEXT;
 
 		ti.pszText = (LPWSTR)L"Optinal Header";
-		TabCtrl_InsertItem(hTab, TAB1, &ti);
+		TabCtrl_InsertItem(g_hTab, TAB1, &ti);
 
 		ti.pszText = (LPWSTR)L"Import Table";
-		TabCtrl_InsertItem(hTab, TAB2, &ti);
+		TabCtrl_InsertItem(g_hTab, TAB2, &ti);
 
 		RECT rc;
-		::GetClientRect(hTab, &rc);
-		TabCtrl_AdjustRect(hTab, FALSE, &rc);
+		::GetClientRect(g_hTab, &rc);
+		TabCtrl_AdjustRect(g_hTab, FALSE, &rc);
 
 		::InitCommonControls();
 
 		/**********************************************************************************************/
 
 		// Initialize Tab 1
-		hTabDialogOptional = ::CreateWindowExW(0, L"STATIC", L"", WS_CHILD | WS_VISIBLE,
-			rc.left, rc.top, rc.right - rc.left, rc.bottom - rc.top, hTab, 0, hInst, 0);
+		g_hTabDialogOptional = ::CreateWindowExW(0, L"STATIC", L"", WS_CHILD | WS_VISIBLE,
+			rc.left, rc.top, rc.right - rc.left, rc.bottom - rc.top, g_hTab, 0, g_hInst, 0);
 
 		HWND hTabListViewOptional = ::CreateWindowExW(WS_EX_CLIENTEDGE, WC_LISTVIEW, L"", WS_CHILD | WS_VISIBLE | LVS_REPORT,
-			0, 0, rc.right, rc.bottom - 15, hTabDialogOptional, 0, 0, 0);
+			0, 0, rc.right, rc.bottom - 15, g_hTabDialogOptional, 0, 0, 0);
 
 		ListView_SetExtendedListViewStyle(hTabListViewOptional, LVS_EX_FULLROWSELECT | LVS_EX_DOUBLEBUFFER);
 
@@ -286,11 +273,11 @@ INT_PTR CALLBACK PEDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 		/**********************************************************************************************/
 
 		// Initialize Tab 2
-		hTabDialogImport = ::CreateWindowExW(0, L"STATIC", L"", WS_CHILD,
-			rc.left, rc.top, rc.right - rc.left, rc.bottom - rc.top, hTab, 0, hInst, 0);
+		g_hTabDialogImport = ::CreateWindowExW(0, L"STATIC", L"", WS_CHILD,
+			rc.left, rc.top, rc.right - rc.left, rc.bottom - rc.top, g_hTab, 0, g_hInst, 0);
 
 		HWND hTabListViewImport = ::CreateWindowExW(WS_EX_CLIENTEDGE, WC_LISTVIEW, L"", WS_CHILD | WS_VISIBLE | LVS_REPORT,
-			0, 0, rc.right, rc.bottom - 15, hTabDialogImport, 0, 0, 0);
+			0, 0, rc.right, rc.bottom - 15, g_hTabDialogImport, 0, 0, 0);
 
 		ListView_SetExtendedListViewStyle(hTabListViewImport, LVS_EX_FULLROWSELECT | LVS_EX_DOUBLEBUFFER);
 
@@ -311,8 +298,8 @@ INT_PTR CALLBACK PEDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 
 		// Get Process Info (Process Name, PID)
 		WCHAR pPath[MAX_PATH];
-		int index = ListView_GetNextItem(hList, -1, LVNI_SELECTED);
-		ListView_GetItemText(hList, index, LV_PATH, pPath, sizeof(pPath));
+		int index = ListView_GetNextItem(g_hList, -1, LVNI_SELECTED);
+		ListView_GetItemText(g_hList, index, LV_PATH, pPath, sizeof(pPath));
 
 		/**********************************************************************************************/
 
@@ -328,10 +315,10 @@ INT_PTR CALLBACK PEDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 
 	case WM_NOTIFY: {
 		if (((LPNMHDR)lParam)->idFrom == IDC_TAB_PE && ((LPNMHDR)lParam)->code == TCN_SELCHANGE) {
-			int i = TabCtrl_GetCurSel(hTab);
+			int i = TabCtrl_GetCurSel(g_hTab);
 
-			::ShowWindow(hTabDialogOptional, i == 0 ? SW_SHOW : SW_HIDE);
-			::ShowWindow(hTabDialogImport, i == 1 ? SW_SHOW : SW_HIDE);
+			::ShowWindow(g_hTabDialogOptional, i == 0 ? SW_SHOW : SW_HIDE);
+			::ShowWindow(g_hTabDialogImport, i == 1 ? SW_SHOW : SW_HIDE);
 		}
 		break;
 	}
@@ -345,50 +332,50 @@ INT_PTR CALLBACK PEDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 }
 
 
-void AddColumns(HWND hList)
+void AddColumns(HWND g_hList)
 {
 	LVCOLUMNW col = { 0 };
 	col.mask = LVCF_TEXT | LVCF_WIDTH;
 
 	col.pszText = const_cast<LPWSTR>(L"Process Name");
 	col.cx = 150;
-	ListView_InsertColumn(hList, LV_PNAME, &col);
+	ListView_InsertColumn(g_hList, LV_PNAME, &col);
 
 	col.pszText = const_cast<LPWSTR>(L"PID");
 	col.cx = 70;
-	ListView_InsertColumn(hList, LV_PID, &col);
+	ListView_InsertColumn(g_hList, LV_PID, &col);
 
 	col.pszText = const_cast<LPWSTR>(L"PPID");
 	col.cx = 70;
-	ListView_InsertColumn(hList, LV_PPID, &col);
+	ListView_InsertColumn(g_hList, LV_PPID, &col);
 
 	col.pszText = const_cast<LPWSTR>(L"Protection");
 	col.cx = 140;
-	ListView_InsertColumn(hList, LV_PROTECT, &col);
+	ListView_InsertColumn(g_hList, LV_PROTECT, &col);
 
 	col.pszText = const_cast<LPWSTR>(L"User name");
 	col.cx = 200;
-	ListView_InsertColumn(hList, LV_USER, &col);
+	ListView_InsertColumn(g_hList, LV_USER, &col);
 
 	col.pszText = const_cast<LPWSTR>(L"ASLR");
 	col.cx = 60;
-	ListView_InsertColumn(hList, LV_ASLR, &col);
+	ListView_InsertColumn(g_hList, LV_ASLR, &col);
 
 	col.pszText = const_cast<LPWSTR>(L"DEP");
 	col.cx = 60;
-	ListView_InsertColumn(hList, LV_DEP, &col);
+	ListView_InsertColumn(g_hList, LV_DEP, &col);
 
 	col.pszText = const_cast<LPWSTR>(L"CFG");
 	col.cx = 60;
-	ListView_InsertColumn(hList, LV_CFG, &col);
+	ListView_InsertColumn(g_hList, LV_CFG, &col);
 
 	col.pszText = const_cast<LPWSTR>(L"Path");
 	col.cx = 450;
-	ListView_InsertColumn(hList, LV_PATH, &col);
+	ListView_InsertColumn(g_hList, LV_PATH, &col);
 }
 
 
-void AddItem(HWND hList, int index, PPROCESSENTRY32W pe, wchar_t* path, PMITIGATION m, PPROTECTION p, PUSERINFO u)
+void AddItem(HWND g_hList, int index, PPROCESSENTRY32W pe, wchar_t* path, PMITIGATION m, PPROTECTION p, PUSERINFO u)
 {
 	// Process Basic Information
 	wchar_t szPid[16] = { 0 };
@@ -432,21 +419,21 @@ void AddItem(HWND hList, int index, PPROCESSENTRY32W pe, wchar_t* path, PMITIGAT
 	item.pszText = pe->szExeFile;
 	item.lParam = (LPARAM)data;
 
-	ListView_InsertItem(hList, &item);
-	ListView_SetItemText(hList, index, LV_PID, szPid);
-	ListView_SetItemText(hList, index, LV_PPID, szPpid);
-	ListView_SetItemText(hList, index, LV_PATH, path);
+	ListView_InsertItem(g_hList, &item);
+	ListView_SetItemText(g_hList, index, LV_PID, szPid);
+	ListView_SetItemText(g_hList, index, LV_PPID, szPpid);
+	ListView_SetItemText(g_hList, index, LV_PATH, path);
 
-	ListView_SetItemText(hList, index, LV_PROTECT, szProtection);
-	ListView_SetItemText(hList, index, LV_USER, szUsername);
+	ListView_SetItemText(g_hList, index, LV_PROTECT, szProtection);
+	ListView_SetItemText(g_hList, index, LV_USER, szUsername);
 
-	ListView_SetItemText(hList, index, LV_ASLR, szASLR);
-	ListView_SetItemText(hList, index, LV_DEP, szDEP);
-	ListView_SetItemText(hList, index, LV_CFG, szCFG);
+	ListView_SetItemText(g_hList, index, LV_ASLR, szASLR);
+	ListView_SetItemText(g_hList, index, LV_DEP, szDEP);
+	ListView_SetItemText(g_hList, index, LV_CFG, szCFG);
 }
 
 
-void GetProcessList(HWND hList)
+void GetProcessList(HWND g_hList)
 {
 	HANDLE hSnapshot = ::CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
 	if (hSnapshot == INVALID_HANDLE_VALUE) {
@@ -476,13 +463,12 @@ void GetProcessList(HWND hList)
 			USERINFO u = { 0 };
 			GetProcessUserInfo(pe.th32ProcessID, &u);
 
-			AddItem(hList, index++, &pe, path, &m, &p, &u);
+			AddItem(g_hList, index++, &pe, path, &m, &p, &u);
 
 		} while (::Process32NextW(hSnapshot, &pe));
 	}
 
-	if (hSnapshot != NULL)
-		SecureCloseHandle(hSnapshot);
+	SecureCloseHandle(hSnapshot);
 }
 
 
@@ -493,9 +479,9 @@ void SetColor(LPNMLVCUSTOMDRAW plvcd)
 	WCHAR protection[64] = { 0 };
 	WCHAR pID[32] = { 0 };
 
-	ListView_GetItemText(hList, itemIndex, LV_USER, username, sizeof(username));
-	ListView_GetItemText(hList, itemIndex, LV_PROTECT, protection, sizeof(protection));
-	ListView_GetItemText(hList, itemIndex, LV_PID, pID, sizeof(pID));
+	ListView_GetItemText(g_hList, itemIndex, LV_USER, username, sizeof(username));
+	ListView_GetItemText(g_hList, itemIndex, LV_PROTECT, protection, sizeof(protection));
+	ListView_GetItemText(g_hList, itemIndex, LV_PID, pID, sizeof(pID));
 
 	if (!_wcsnicmp(username, L"NT AUTHORITY\\SYSTEM", sizeof(username)))
 		plvcd->clrTextBk = RGB(170, 204, 255);
@@ -508,6 +494,23 @@ void SetColor(LPNMLVCUSTOMDRAW plvcd)
 
 	if (IsProcess32(_wtoi(pID)))
 		plvcd->clrTextBk = RGB(188, 143, 143);
+}
+
+
+void ShowPopupMenu(HWND hWnd)
+{
+	HMENU hPopupMenu = ::CreatePopupMenu();
+
+	::AppendMenuW(hPopupMenu, MF_STRING, PM_PEB_INFO, L"PEB Information");
+	::AppendMenuW(hPopupMenu, MF_STRING, PM_PE_INFO, L"PE Information");
+	::AppendMenuW(hPopupMenu, MF_STRING, PM_DUMP, L"Create Dump");
+	::AppendMenuW(hPopupMenu, MF_STRING, PM_INJECT, L"Inject DLL");
+
+	POINT pt = { 0 };
+
+	::GetCursorPos(&pt);
+	::TrackPopupMenu(hPopupMenu, TPM_LEFTALIGN | TPM_TOPALIGN, pt.x, pt.y, 0, hWnd, nullptr);
+	::DestroyMenu(hPopupMenu);
 }
 
 

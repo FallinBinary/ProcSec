@@ -39,7 +39,7 @@ BOOL GetPeInfo(PTAB_HANDLES pTabHandles, LPWSTR pPath)
 	}
 
 	SecureCloseHandle(hFile);
-	::free(hFile);
+	::free(fileBuff);
 	return TRUE;
 }
 
