@@ -17,7 +17,13 @@ typedef struct _MITIGATION {
 	DWORD ControlFlowGuardPolicy;
 } MITIGATION, * PMITIGATION;
 
+typedef struct _USERINFO {
+	WCHAR UserName[UNLEN + 1];
+	WCHAR DomainName[DNLEN + 1];
+}USERINFO, * PUSERINFO;
+
 
 /* Function Prototype */
 void GetProcessMitigation(HANDLE hProcess, PMITIGATION m);
 BOOL GetProcessProtection(HANDLE hProcess, PPROTECTION p);
+BOOL GetProcessUserInfo(int pID, PUSERINFO pUserInfo);

@@ -49,3 +49,32 @@ void GetProcessMitigation(HANDLE hProcess, PMITIGATION m)
 	else
 		m->ControlFlowGuardPolicy = cfg.EnableControlFlowGuard;
 }
+
+
+BOOL GetProcessUserInfo(int pID, PUSERINFO pUserInfo)
+{
+	HANDLE hToken = 0;
+	DWORD retLen = 0;
+	BYTE buffer[1 << 12] = { 0 };
+	WCHAR stringSid[32] = { 0 };
+	WCHAR userName[UNLEN + 1] = { 0 };
+	DWORD userNameSize = _countof(userName);
+	WCHAR domainName[DNLEN + 1] = { 0 };
+	DWORD domainNameSize = _countof(domainName);
+	SID_NAME_USE use;
+
+	HANDLE hProcess = ::OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, FALSE, pID);
+	if (!hProcess)
+		return FALSE;
+
+	if (!::OpenProcessToken(hProcess, TOKEN_QUERY, &hToken))
+		return FALSE; 
+
+	::GetTokenInformation(hToken, TokenUser, &buffer, sizeof(buffer), &retLen);
+	PTOKEN_USER tUser = (PTOKEN_USER)buffer;
+
+	ConvertSidToStringSidW(tUser->User.Sid, (LPWSTR*)&stringSid);
+	LookupAccountSidW(nullptr, tUser->User.Sid, pUserInfo->UserName, &userNameSize, pUserInfo->DomainName, &domainNameSize, &use);
+
+	return TRUE;
+}

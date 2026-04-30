@@ -7,6 +7,8 @@
 #include <Psapi.h>
 #include <DbgHelp.h>
 #include <iostream>
+#include <sddl.h>
+#include <lmcons.h>
 
 #include "resource.h"
 #include "Miscellaneous.h"
