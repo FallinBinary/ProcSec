@@ -50,7 +50,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 		hList = ::CreateWindowExW(WS_EX_CLIENTEDGE, WC_LISTVIEWW, L"",
 			WS_CHILD | WS_VISIBLE | LVS_REPORT | LVS_SINGLESEL | LVS_SHOWSELALWAYS,
-			CW_USEDEFAULT, 0, CW_USEDEFAULT, 0, hWnd, nullptr, ((LPCREATESTRUCT)lParam)->hInstance, nullptr);
+			CW_USEDEFAULT, 0, CW_USEDEFAULT, 0, hWnd, (HMENU)IDC_MAIN_LIST, ((LPCREATESTRUCT)lParam)->hInstance, nullptr);
 
 		ListView_SetExtendedListViewStyle(hList, LVS_EX_FULLROWSELECT);
 
@@ -64,6 +64,19 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 	case WM_NOTIFY: {
 		LPNMHDR hdr = (LPNMHDR)lParam;
+
+		if (hdr->code == NM_CUSTOMDRAW && hdr->idFrom == IDC_MAIN_LIST) {
+			NMLVCUSTOMDRAW* plvcd = (NMLVCUSTOMDRAW*)hdr;
+
+			if (plvcd->nmcd.dwDrawStage == CDDS_PREPAINT)
+				return CDRF_NOTIFYITEMDRAW;
+
+			else if (plvcd->nmcd.dwDrawStage == CDDS_ITEMPREPAINT) {
+				SetColor(plvcd);
+
+				return CDRF_NEWFONT;
+			}
+		}
 
 		if (hdr->hwndFrom == hList && hdr->code == NM_RCLICK) {
 
@@ -445,6 +458,31 @@ void GetProcessList(HWND hList)
 
 	if (hSnapshot != NULL)
 		SecureCloseHandle(hSnapshot);
+}
+
+
+void SetColor(LPNMLVCUSTOMDRAW plvcd)
+{
+	int itemIndex = (int)plvcd->nmcd.dwItemSpec;
+	WCHAR username[UNLEN + DNLEN + 2] = { 0 };
+	WCHAR protection[64] = { 0 };
+	WCHAR pID[32] = { 0 };
+
+	ListView_GetItemText(hList, itemIndex, LV_USER, username, sizeof(username));
+	ListView_GetItemText(hList, itemIndex, LV_PROTECT, protection, sizeof(protection));
+	ListView_GetItemText(hList, itemIndex, LV_PID, pID, sizeof(pID));
+
+	if (!_wcsnicmp(username, L"NT AUTHORITY\\SYSTEM", sizeof(username)))
+		plvcd->clrTextBk = RGB(170, 204, 255);
+
+	if (protection[0] != L'\x20')
+		plvcd->clrTextBk = RGB(255, 170, 0);
+
+	if (IsProcessOwn(_wtoi(pID)))
+		plvcd->clrTextBk = RGB(255, 255, 170);
+
+	if (IsProcess32(_wtoi(pID)))
+		plvcd->clrTextBk = RGB(188, 143, 143);
 }
 
 

@@ -12,6 +12,8 @@
 #pragma comment(lib, "comctl32.lib")
 
 
+#define IDC_MAIN_LIST 1001
+
 /* List View MACRO */
 #define LV_PNAME   0
 #define LV_PID	   1
@@ -45,8 +47,9 @@ int CALLBACK CompareFunc(LPARAM lParam1, LPARAM lParam2, LPARAM lParamSort);
 int CALLBACK CompareOriginal(LPARAM lParam1, LPARAM lParam2, LPARAM lParamSort);
 
 void AddColumns(HWND hList);
-void AddItem(HWND hList, int index, PPROCESSENTRY32W pe, wchar_t* path, PMITIGATION m, PPROTECTION p, USERINFO u);
+void AddItem(HWND hList, int index, PPROCESSENTRY32W pe, wchar_t* path, PMITIGATION m, PPROTECTION p, PUSERINFO u);
 void GetProcessList(HWND hList);
+void SetColor(LPNMLVCUSTOMDRAW plvcd);
 
 
 /* Global Variables */
