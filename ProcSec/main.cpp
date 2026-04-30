@@ -96,6 +96,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 		else if (hdr->hwndFrom == hList && hdr->code == LVN_COLUMNCLICK) {
 			NMLISTVIEW* pnmlv = (NMLISTVIEW*)lParam;
+			HWND hHeader = ListView_GetHeader(hList);
+			HDITEM hdi = { 0 };
+			hdi.mask = HDI_FORMAT;
 			
 			if (g_SortColumn == pnmlv->iSubItem) {
 				g_SortState++;
@@ -107,10 +110,32 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 				g_SortState = 1;
 			}
 
-			if (g_SortState == 0)
-				ListView_SortItems(hList, CompareOriginal, 0);
-			else
-				ListView_SortItems(hList, CompareFunc, g_SortColumn);
+			if (g_SortColumn >= 0 && g_SortColumn <= LV_PID) {
+
+				Header_GetItem(hHeader, g_SortColumn, &hdi);
+				hdi.fmt &= ~(HDF_SORTUP | HDF_SORTDOWN);
+
+				// Clean Previous Arrow
+				if (g_PreviousSortColumn != -1) {
+					Header_GetItem(hHeader, g_PreviousSortColumn, &hdi);
+					hdi.fmt &= ~(HDF_SORTUP | HDF_SORTDOWN);
+					Header_SetItem(hHeader, g_PreviousSortColumn, &hdi);
+				}
+
+				if (g_SortState == 0)
+					ListView_SortItems(hList, CompareOriginal, 0);
+
+				else {
+					ListView_SortItems(hList, CompareFunc, g_SortColumn);
+					if (g_SortState == 1)
+						hdi.fmt |= HDF_SORTUP;
+					else if (g_SortState == 2)
+						hdi.fmt |= HDF_SORTDOWN;
+				}
+
+				g_PreviousSortColumn = g_SortColumn;
+				Header_SetItem(hHeader, g_SortColumn, &hdi);
+			}
 		}
 
 		else if (hdr->hwndFrom == hList && hdr->code == LVM_DELETEITEM) {
@@ -501,9 +526,6 @@ int CALLBACK CompareFunc(LPARAM lParam1, LPARAM lParam2, LPARAM lParamSort)
 		
 	case LV_PID:
 		result = (int)(p1->pid - p2->pid); break;
-
-	case LV_PPID:
-		result = (int)(p1->ppid = p2->ppid); break;
 	}
 
 	if (g_SortState == 2) // Descending

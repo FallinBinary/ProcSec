@@ -59,6 +59,7 @@ HWND hTabDialogOptional;
 HWND hTabDialogImport;
 HWND hTab;
 
+int g_PreviousSortColumn = -1;
 int g_SortColumn = -1;
 int g_SortState = 0;
 // 0 = no sort
