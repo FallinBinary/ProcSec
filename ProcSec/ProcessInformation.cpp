@@ -1,7 +1,7 @@
 #include "ProcessInformation.h"
 
 
-BOOL GetProcessProtection(HANDLE hProcess, PPROTECTION p)
+BOOL GetProcessProtection(int pID, PPROTECTION p)
 {
 	HMODULE ntdll = ::LoadLibraryW(L"ntdll.dll");
 	if (ntdll != NULL) {
@@ -14,6 +14,8 @@ BOOL GetProcessProtection(HANDLE hProcess, PPROTECTION p)
 		const wchar_t* protectSigner[] = { L"", L"Autheticode", L"CodeGen", L"AntiMalware",
 											 L"Lsa", L"Windows", L"WinTcb", L"WinSystem" };
 
+		HANDLE hProcess = ::OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, FALSE, pID);
+
 		PS_PROTECTION pp = { 0 };
 		ULONG nRetLen;
 		NTSTATUS res = NtQueryInformationProcess(hProcess, ProcessProtectionInformation, &pp, sizeof(pp), &nRetLen);
@@ -21,6 +23,8 @@ BOOL GetProcessProtection(HANDLE hProcess, PPROTECTION p)
 		::wcsncpy_s(p->Type, protectType[pp.Type], sizeof(p->Type));
 		::wcsncpy_s(p->Signer, protectSigner[pp.Signer], sizeof(p->Signer));
 		// ::wcsncpy_s(p->Audit, protectAudit[pp.Audit], sizeof(p->Audit));
+
+		SecureCloseHandle(hProcess);
 
 		return TRUE;
 	}

@@ -432,10 +432,8 @@ void GetProcessList(HWND hList)
 
 			SecureCloseHandle(hProcess);
 
-			HANDLE hProcessLimited = ::OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, FALSE, pe.th32ProcessID);
 			PROTECTION p = { 0 };
-			GetProcessProtection(hProcessLimited, &p);
-			SecureCloseHandle(hProcessLimited);
+			GetProcessProtection(pe.th32ProcessID, &p);
 
 			USERINFO u = { 0 };
 			GetProcessUserInfo(pe.th32ProcessID, &u);

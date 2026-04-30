@@ -25,5 +25,5 @@ typedef struct _USERINFO {
 
 /* Function Prototype */
 void GetProcessMitigation(HANDLE hProcess, PMITIGATION m);
-BOOL GetProcessProtection(HANDLE hProcess, PPROTECTION p);
+BOOL GetProcessProtection(int pID, PPROTECTION p);
 BOOL GetProcessUserInfo(int pID, PUSERINFO pUserInfo);
