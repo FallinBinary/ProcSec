@@ -23,6 +23,7 @@ This project was created to practice Windows API programming, GUI development, a
 - Show basic process protection level
 - Display process mitigation policies (CFG, ASLR, DEP)
 - Dump process memory (educational purpose)
+- DLL injector
 - Show simplified PE information
 - Basic PEB inspection
 - GUI interface written with Visual Studio 2022
