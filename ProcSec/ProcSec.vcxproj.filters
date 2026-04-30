@@ -18,10 +18,7 @@
     <ClCompile Include="main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="ProcessMitigation.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="ProcessProtection.cpp">
+    <ClCompile Include="ProcessInformation.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="DebugPrivilege.cpp">
@@ -50,10 +47,7 @@
     <ClInclude Include="main.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="ProcessMitigation.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="ProcessProtection.h">
+    <ClInclude Include="ProcessInformation.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Header.h">

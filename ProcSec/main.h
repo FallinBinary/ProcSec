@@ -2,8 +2,7 @@
 
 #include "Header.h"
 
-#include "ProcessMitigation.h"
-#include "ProcessProtection.h"
+#include "ProcessInformation.h"
 #include "DebugPrivilege.h"
 #include "PEBInformation.h"
 #include "PEInformation.h"

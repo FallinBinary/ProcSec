@@ -148,8 +148,7 @@
     <ClCompile Include="Miscellaneous.cpp" />
     <ClCompile Include="PEBInformation.cpp" />
     <ClCompile Include="PEInformation.cpp" />
-    <ClCompile Include="ProcessMitigation.cpp" />
-    <ClCompile Include="ProcessProtection.cpp" />
+    <ClCompile Include="ProcessInformation.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="DebugPrivilege.h" />
@@ -160,8 +159,7 @@
     <ClInclude Include="Miscellaneous.h" />
     <ClInclude Include="PEBInformation.h" />
     <ClInclude Include="PEInformation.h" />
-    <ClInclude Include="ProcessMitigation.h" />
-    <ClInclude Include="ProcessProtection.h" />
+    <ClInclude Include="ProcessInformation.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="UndocStructures.h" />
   </ItemGroup>

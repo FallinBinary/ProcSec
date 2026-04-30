@@ -418,14 +418,14 @@ void GetProcessList(HWND hList)
 			else ::GetModuleFileNameExW(hProcess, nullptr, path, MAX_PATH);
 
 			MITIGATION m = { 0 };
-			GetMitigation(hProcess, &m);
+			GetProcessMitigation(hProcess, &m);
 
 			if (hProcess != NULL)
 				SecureCloseHandle(hProcess);
 
 			HANDLE hProcessLimited = ::OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, FALSE, pe.th32ProcessID);
 			PROTECTION p = { 0 };
-			GetProtection(hProcessLimited, &p);
+			GetProcessProtection(hProcessLimited, &p);
 			SecureCloseHandle(hProcessLimited);
 
 			AddItem(hList, index++, &pe, path, &m, &p);
