@@ -27,3 +27,5 @@ typedef struct _USERINFO {
 void GetProcessMitigation(HANDLE hProcess, PMITIGATION m);
 BOOL GetProcessProtection(int pID, PPROTECTION p);
 BOOL GetProcessUserInfo(int pID, PUSERINFO pUserInfo);
+BOOL IsProcess32(int pID);
+BOOL IsProcessOwn(int pID);

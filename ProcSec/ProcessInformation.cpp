@@ -82,3 +82,31 @@ BOOL GetProcessUserInfo(int pID, PUSERINFO pUserInfo)
 
 	return TRUE;
 }
+
+
+BOOL IsProcess32(int pID)
+{
+	HANDLE hProcess = ::OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, FALSE, pID);
+	if (!hProcess)
+		return FALSE;
+
+	BOOL res = 0;
+	IsWow64Process(hProcess, &res);
+
+	return res;
+}
+
+
+BOOL IsProcessOwn(int pID)
+{
+	USERINFO currentUserInfo = { 0 };
+	USERINFO targetUserInfo = { 0 };
+	GetProcessUserInfo(GetCurrentProcessId(), &currentUserInfo);
+	GetProcessUserInfo(pID, &targetUserInfo);
+
+	if (!_wcsnicmp(currentUserInfo.UserName, targetUserInfo.UserName, sizeof(currentUserInfo.UserName)))
+		if (!_wcsnicmp(currentUserInfo.DomainName, targetUserInfo.DomainName, sizeof(currentUserInfo.DomainName)))
+			return TRUE;
+
+	return FALSE;
+}
