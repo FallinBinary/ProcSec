@@ -17,10 +17,11 @@
 #define LV_PID	   1
 #define LV_PPID    2
 #define LV_PROTECT 3
-#define LV_ASLR    4
-#define LV_DEP     5
-#define LV_CFG     6
-#define LV_PATH    7
+#define LV_USER    4
+#define LV_ASLR    5
+#define LV_DEP     6
+#define LV_CFG     7
+#define LV_PATH    8
 /* Popup Menu MACRO */
 #define PM_PEB_INFO 100
 #define PM_PE_INFO  200
@@ -44,7 +45,7 @@ int CALLBACK CompareFunc(LPARAM lParam1, LPARAM lParam2, LPARAM lParamSort);
 int CALLBACK CompareOriginal(LPARAM lParam1, LPARAM lParam2, LPARAM lParamSort);
 
 void AddColumns(HWND hList);
-void AddItem(HWND hList, int index, PPROCESSENTRY32W pe, wchar_t* path, PMITIGATION m, PPROTECTION p);
+void AddItem(HWND hList, int index, PPROCESSENTRY32W pe, wchar_t* path, PMITIGATION m, PPROTECTION p, USERINFO u);
 void GetProcessList(HWND hList);
 
 

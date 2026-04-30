@@ -317,27 +317,31 @@ void AddColumns(HWND hList)
 	ListView_InsertColumn(hList, LV_PNAME, &col);
 
 	col.pszText = const_cast<LPWSTR>(L"PID");
-	col.cx = 80;
+	col.cx = 70;
 	ListView_InsertColumn(hList, LV_PID, &col);
 
 	col.pszText = const_cast<LPWSTR>(L"PPID");
-	col.cx = 80;
+	col.cx = 70;
 	ListView_InsertColumn(hList, LV_PPID, &col);
 
 	col.pszText = const_cast<LPWSTR>(L"Protection");
-	col.cx = 160;
+	col.cx = 140;
 	ListView_InsertColumn(hList, LV_PROTECT, &col);
 
+	col.pszText = const_cast<LPWSTR>(L"User name");
+	col.cx = 200;
+	ListView_InsertColumn(hList, LV_USER, &col);
+
 	col.pszText = const_cast<LPWSTR>(L"ASLR");
-	col.cx = 70;
+	col.cx = 60;
 	ListView_InsertColumn(hList, LV_ASLR, &col);
 
 	col.pszText = const_cast<LPWSTR>(L"DEP");
-	col.cx = 70;
+	col.cx = 60;
 	ListView_InsertColumn(hList, LV_DEP, &col);
 
 	col.pszText = const_cast<LPWSTR>(L"CFG");
-	col.cx = 70;
+	col.cx = 60;
 	ListView_InsertColumn(hList, LV_CFG, &col);
 
 	col.pszText = const_cast<LPWSTR>(L"Path");
@@ -346,7 +350,7 @@ void AddColumns(HWND hList)
 }
 
 
-void AddItem(HWND hList, int index, PPROCESSENTRY32W pe, wchar_t* path, PMITIGATION m, PPROTECTION p)
+void AddItem(HWND hList, int index, PPROCESSENTRY32W pe, wchar_t* path, PMITIGATION m, PPROTECTION p, PUSERINFO u)
 {
 	// Process Basic Information
 	wchar_t szPid[16] = { 0 };
@@ -358,6 +362,11 @@ void AddItem(HWND hList, int index, PPROCESSENTRY32W pe, wchar_t* path, PMITIGAT
 	// Process Protection Information
 	wchar_t szProtection[64] = { 0 };
 	::wsprintfW(szProtection, L"%ws %ws", p->Type, p->Signer);
+
+	// Process Username Information
+	wchar_t szUsername[UNLEN + DNLEN + 2] = { 0 };
+	if (u->UserName[0] != L'\0')
+		::wsprintfW(szUsername, L"%ws\\%ws", u->DomainName, u->UserName);
 
 	// Process Mitigation Information
 	wchar_t szASLR[8] = { 0 };
@@ -391,6 +400,7 @@ void AddItem(HWND hList, int index, PPROCESSENTRY32W pe, wchar_t* path, PMITIGAT
 	ListView_SetItemText(hList, index, LV_PATH, path);
 
 	ListView_SetItemText(hList, index, LV_PROTECT, szProtection);
+	ListView_SetItemText(hList, index, LV_USER, szUsername);
 
 	ListView_SetItemText(hList, index, LV_ASLR, szASLR);
 	ListView_SetItemText(hList, index, LV_DEP, szDEP);
@@ -420,15 +430,17 @@ void GetProcessList(HWND hList)
 			MITIGATION m = { 0 };
 			GetProcessMitigation(hProcess, &m);
 
-			if (hProcess != NULL)
-				SecureCloseHandle(hProcess);
+			SecureCloseHandle(hProcess);
 
 			HANDLE hProcessLimited = ::OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, FALSE, pe.th32ProcessID);
 			PROTECTION p = { 0 };
 			GetProcessProtection(hProcessLimited, &p);
 			SecureCloseHandle(hProcessLimited);
 
-			AddItem(hList, index++, &pe, path, &m, &p);
+			USERINFO u = { 0 };
+			GetProcessUserInfo(pe.th32ProcessID, &u);
+
+			AddItem(hList, index++, &pe, path, &m, &p, &u);
 
 		} while (::Process32NextW(hSnapshot, &pe));
 	}
