@@ -486,6 +486,9 @@ void SetColor(LPNMLVCUSTOMDRAW plvcd)
 	if (!_wcsnicmp(username, L"NT AUTHORITY\\SYSTEM", sizeof(username)))
 		plvcd->clrTextBk = RGB(170, 204, 255);
 
+	if (!_wcsnicmp(username, L"NT AUTHORITY\\LOCAL SERVICE", sizeof(username)) || !_wcsnicmp(username, L"NT AUTHORITY\\NETWORK SERVICE", sizeof(username)))
+		plvcd->clrTextBk = RGB(204, 255, 255);
+
 	if (protection[0] != L'\x20')
 		plvcd->clrTextBk = RGB(255, 170, 0);
 
@@ -494,6 +497,7 @@ void SetColor(LPNMLVCUSTOMDRAW plvcd)
 
 	if (IsProcess32(_wtoi(pID)))
 		plvcd->clrTextBk = RGB(188, 143, 143);
+	
 }
 
 
