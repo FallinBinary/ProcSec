@@ -27,6 +27,7 @@ typedef struct _USERINFO {
 HANDLE OpenProcessWithQueryLimitedInformation(DWORD pID, BOOLEAN showError);
 HANDLE OpenProcessWithVMRead(DWORD pID, BOOLEAN showError);
 void GetProcessMitigation(HANDLE hProcess, PMITIGATION m);
+BOOL GetProcessBasicInformation(DWORD pID, PPROCESS_BASIC_INFORMATION pbi, SIZE_T spbi);
 BOOL GetProcessProtection(DWORD pID, PPROTECTION p);
 BOOL GetProcessUserInfo(DWORD pID, PUSERINFO pUserInfo);
 BOOL IsProcess32(DWORD pID);

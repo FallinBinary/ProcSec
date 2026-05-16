@@ -33,6 +33,25 @@ HANDLE OpenProcessWithVMRead(DWORD pID, BOOLEAN showError)
 }
 
 
+BOOL GetProcessBasicInformation(DWORD pID, PPROCESS_BASIC_INFORMATION pbi, SIZE_T spbi)
+{
+	HMODULE hNtdll = ::LoadLibraryW(L"ntdll.dll");
+	if (hNtdll != NULL) {
+		NtQueryInformationProcess_t NtQueryInformationProcess = (NtQueryInformationProcess_t)::GetProcAddress(hNtdll, "NtQueryInformationProcess");
+
+		::FreeLibrary(hNtdll);
+
+		HANDLE hProcess = OpenProcessWithVMRead(pID, TRUE);
+		if (hProcess != NULL) {
+			ULONG nRetLen;
+			NtQueryInformationProcess(hProcess, ProcessBasicInformation, pbi, spbi, &nRetLen);
+			return TRUE;
+		}
+	}
+	return FALSE;
+}
+
+
 BOOL GetProcessProtection(DWORD pID, PPROTECTION p)
 {
 	HMODULE ntdll = ::LoadLibraryW(L"ntdll.dll");
