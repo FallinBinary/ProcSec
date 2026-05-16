@@ -13,3 +13,4 @@
 #include "resource.h"
 #include "Miscellaneous.h"
 #include "UndocStructures.h"
+#include "ProcessInformation.h"

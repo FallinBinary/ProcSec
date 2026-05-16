@@ -1,8 +1,6 @@
 #pragma once
 
 #include "Header.h"
-
-#include "ProcessInformation.h"
 #include "DebugPrivilege.h"
 #include "PEBInformation.h"
 #include "PEInformation.h"
