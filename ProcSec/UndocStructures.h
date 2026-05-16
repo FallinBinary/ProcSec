@@ -5,6 +5,7 @@
 
 // Reference: https://ntdoc.m417z.com/ntqueryinformationprocess
 // Reference: https://ntdoc.m417z.com/process_basic_information
+// Reference: https://ntdoc.m417z.com/process_logging_information
 // Reference: https://www.vergiliusproject.com/kernels/x64/windows-11/25h2/_PEB
 
 
@@ -138,10 +139,31 @@ typedef struct _PS_PROTECTION
 } PS_PROTECTION, * PPS_PROTECTION;
 
 
+typedef struct _PROCESS_LOGGING_INFORMATION
+{
+    union
+    {
+        ULONG Flags;
+        struct
+        {
+            ULONG EnableReadVmLogging : 1;                  // Enables logging of read operations to process virtual memory.
+            ULONG EnableWriteVmLogging : 1;                 // Enables logging of write operations to process virtual memory.
+            ULONG EnableProcessSuspendResumeLogging : 1;    // Enables logging of process suspend and resume events.
+            ULONG EnableThreadSuspendResumeLogging : 1;     // Enables logging of thread suspend and resume events.
+            ULONG EnableLocalExecProtectVmLogging : 1;      // Enables logging of local execution protection for virtual memory.
+            ULONG EnableRemoteExecProtectVmLogging : 1;     // Enables logging of remote execution protection for virtual memory.
+            ULONG EnableImpersonationLogging : 1;           // Enables logging of impersonation events.
+            ULONG Reserved : 25;
+        };
+    };
+} PROCESS_LOGGING_INFORMATION, * PPROCESS_LOGGING_INFORMATION;
+
+
 typedef enum _MYPROCESSINFOCLASS
 {
     ProcessBasicInformation = 0,
-    ProcessProtectionInformation = 61
+    ProcessProtectionInformation = 61,
+    ProcessEnableLogging = 96
 } MYPROCESSINFOCLASS;
 
 

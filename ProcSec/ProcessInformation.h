@@ -4,8 +4,7 @@
 
 
 /* Structures */
-typedef struct _PROTECTION
-{
+typedef struct _PROTECTION {
 	wchar_t Type[16];
 	wchar_t Audit[16];
 	wchar_t Signer[16];
@@ -28,6 +27,7 @@ HANDLE OpenProcessWithQueryLimitedInformation(DWORD pID, BOOLEAN showError);
 HANDLE OpenProcessWithVMRead(DWORD pID, BOOLEAN showError);
 void GetProcessMitigation(HANDLE hProcess, PMITIGATION m);
 BOOL GetProcessBasicInformation(DWORD pID, PPROCESS_BASIC_INFORMATION pbi, SIZE_T spbi);
+BOOL GetProcessEnableLoggingInfo(DWORD pID, PPROCESS_LOGGING_INFORMATION pli, SIZE_T spli);
 BOOL GetProcessProtection(DWORD pID, PPROTECTION p);
 BOOL GetProcessUserInfo(DWORD pID, PUSERINFO pUserInfo);
 BOOL IsProcess32(DWORD pID);

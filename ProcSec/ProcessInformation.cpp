@@ -41,10 +41,29 @@ BOOL GetProcessBasicInformation(DWORD pID, PPROCESS_BASIC_INFORMATION pbi, SIZE_
 
 		::FreeLibrary(hNtdll);
 
-		HANDLE hProcess = OpenProcessWithVMRead(pID, TRUE);
+		HANDLE hProcess = OpenProcessWithQueryLimitedInformation(pID, TRUE);
 		if (hProcess != NULL) {
 			ULONG nRetLen;
 			NtQueryInformationProcess(hProcess, ProcessBasicInformation, pbi, spbi, &nRetLen);
+			return TRUE;
+		}
+	}
+	return FALSE;
+}
+
+
+BOOL GetProcessEnableLoggingInfo(DWORD pID, PPROCESS_LOGGING_INFORMATION pli, SIZE_T spli)
+{
+	HMODULE hNtdll = ::LoadLibraryW(L"ntdll.dll");
+	if (hNtdll != NULL) {
+		NtQueryInformationProcess_t NtQueryInformationProcess = (NtQueryInformationProcess_t)::GetProcAddress(hNtdll, "NtQueryInformationProcess");
+
+		::FreeLibrary(hNtdll);
+
+		HANDLE hProcess = OpenProcessWithQueryLimitedInformation(pID, FALSE);
+		if (hProcess != NULL) {
+			ULONG nRetLen = 0;
+			NTSTATUS res = NtQueryInformationProcess(hProcess, ProcessEnableLogging, pli, spli, &nRetLen);
 			return TRUE;
 		}
 	}
