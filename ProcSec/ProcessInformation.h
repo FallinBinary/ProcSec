@@ -24,8 +24,10 @@ typedef struct _USERINFO {
 
 
 /* Function Prototype */
+HANDLE OpenProcessWithQueryLimitedInformation(DWORD pID, BOOLEAN showError);
+HANDLE OpenProcessWithVMRead(DWORD pID, BOOLEAN showError);
 void GetProcessMitigation(HANDLE hProcess, PMITIGATION m);
-BOOL GetProcessProtection(int pID, PPROTECTION p);
-BOOL GetProcessUserInfo(int pID, PUSERINFO pUserInfo);
-BOOL IsProcess32(int pID);
-BOOL IsProcessOwn(int pID);
+BOOL GetProcessProtection(DWORD pID, PPROTECTION p);
+BOOL GetProcessUserInfo(DWORD pID, PUSERINFO pUserInfo);
+BOOL IsProcess32(DWORD pID);
+BOOL IsOwnProcess(DWORD pID);

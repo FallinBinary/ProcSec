@@ -1,7 +1,39 @@
 #include "ProcessInformation.h"
 
 
-BOOL GetProcessProtection(int pID, PPROTECTION p)
+HANDLE OpenProcessWithQueryLimitedInformation(DWORD pID, BOOLEAN showError)
+{
+	HANDLE hProcess = ::OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, FALSE, pID);
+	if (hProcess == NULL) {
+		if (showError == TRUE) {
+			if (::GetLastError() == ERROR_ACCESS_DENIED)
+				::MessageBoxW(nullptr, L"Error: Access is denied.", L"Process Security", MB_OK | MB_ICONERROR);
+			else
+				ShowErrorWithLastError(L"OpenProcess");
+		}
+		return NULL;
+	}
+	return hProcess;
+}
+
+
+HANDLE OpenProcessWithVMRead(DWORD pID, BOOLEAN showError)
+{
+	HANDLE hProcess = ::OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, pID);
+	if (hProcess == NULL) {
+		if (showError == TRUE) {
+			if (::GetLastError() == ERROR_ACCESS_DENIED)
+				::MessageBoxW(nullptr, L"Error: Access is denied.", L"Process Security", MB_OK | MB_ICONERROR);
+			else
+				ShowErrorWithLastError(L"OpenProcess");
+		}
+		return NULL;
+	}
+	return hProcess;
+}
+
+
+BOOL GetProcessProtection(DWORD pID, PPROTECTION p)
 {
 	HMODULE ntdll = ::LoadLibraryW(L"ntdll.dll");
 	if (ntdll != NULL) {
@@ -14,7 +46,7 @@ BOOL GetProcessProtection(int pID, PPROTECTION p)
 		const wchar_t* protectSigner[] = { L"", L"Autheticode", L"CodeGen", L"AntiMalware",
 											 L"Lsa", L"Windows", L"WinTcb", L"WinSystem" };
 
-		HANDLE hProcess = ::OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, FALSE, pID);
+		HANDLE hProcess = OpenProcessWithQueryLimitedInformation(pID, FALSE);
 
 		PS_PROTECTION pp = { 0 };
 		ULONG nRetLen;
@@ -55,7 +87,7 @@ void GetProcessMitigation(HANDLE hProcess, PMITIGATION m)
 }
 
 
-BOOL GetProcessUserInfo(int pID, PUSERINFO pUserInfo)
+BOOL GetProcessUserInfo(DWORD pID, PUSERINFO pUserInfo)
 {
 	HANDLE hToken = 0;
 	DWORD retLen = 0;
@@ -67,37 +99,39 @@ BOOL GetProcessUserInfo(int pID, PUSERINFO pUserInfo)
 	DWORD domainNameSize = _countof(domainName);
 	SID_NAME_USE use;
 
-	HANDLE hProcess = ::OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, FALSE, pID);
-	if (!hProcess)
-		return FALSE;
+	HANDLE hProcess = OpenProcessWithQueryLimitedInformation(pID, FALSE);
+	if (hProcess != NULL) {
 
-	if (!::OpenProcessToken(hProcess, TOKEN_QUERY, &hToken))
-		return FALSE; 
+		if (::OpenProcessToken(hProcess, TOKEN_QUERY, &hToken)) {
 
-	::GetTokenInformation(hToken, TokenUser, &buffer, sizeof(buffer), &retLen);
-	PTOKEN_USER tUser = (PTOKEN_USER)buffer;
+			::GetTokenInformation(hToken, TokenUser, &buffer, sizeof(buffer), &retLen);
+			PTOKEN_USER tUser = (PTOKEN_USER)buffer;
 
-	ConvertSidToStringSidW(tUser->User.Sid, (LPWSTR*)&stringSid);
-	LookupAccountSidW(nullptr, tUser->User.Sid, pUserInfo->UserName, &userNameSize, pUserInfo->DomainName, &domainNameSize, &use);
+			ConvertSidToStringSidW(tUser->User.Sid, (LPWSTR*)&stringSid);
+			LookupAccountSidW(nullptr, tUser->User.Sid, pUserInfo->UserName, &userNameSize, pUserInfo->DomainName, &domainNameSize, &use);
 
-	return TRUE;
+			return TRUE;
+		}
+	}
+	return FALSE;
 }
 
 
-BOOL IsProcess32(int pID)
+BOOL IsProcess32(DWORD pID)
 {
-	HANDLE hProcess = ::OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, FALSE, pID);
-	if (!hProcess)
-		return FALSE;
+	HANDLE hProcess = OpenProcessWithQueryLimitedInformation(pID, FALSE);
+	if (hProcess != NULL) {
 
-	BOOL res = 0;
-	IsWow64Process(hProcess, &res);
+		BOOL res = 0;
+		IsWow64Process(hProcess, &res);
 
-	return res;
+		return res;
+	}
+	return FALSE;
 }
 
 
-BOOL IsProcessOwn(int pID)
+BOOL IsOwnProcess(DWORD pID)
 {
 	USERINFO currentUserInfo = { 0 };
 	USERINFO targetUserInfo = { 0 };

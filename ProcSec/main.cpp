@@ -492,7 +492,7 @@ void SetColor(LPNMLVCUSTOMDRAW plvcd)
 	if (protection[0] != L'\x20')
 		plvcd->clrTextBk = RGB(255, 170, 0);
 
-	if (IsProcessOwn(_wtoi(pID)))
+	if (IsOwnProcess(_wtoi(pID)))
 		plvcd->clrTextBk = RGB(255, 255, 170);
 
 	if (IsProcess32(_wtoi(pID)))
