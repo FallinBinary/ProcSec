@@ -17,6 +17,22 @@ HANDLE OpenProcessWithQueryLimitedInformation(DWORD pID, BOOLEAN showError)
 }
 
 
+HANDLE OpenProcessWithQueryInformation(DWORD pID, BOOLEAN showError)
+{
+	HANDLE hProcess = ::OpenProcess(PROCESS_QUERY_INFORMATION, FALSE, pID);
+	if (hProcess == NULL) {
+		if (showError == TRUE) {
+			if (::GetLastError() == ERROR_ACCESS_DENIED)
+				::MessageBoxW(nullptr, L"Error: Access is denied.", L"Process Security", MB_OK | MB_ICONERROR);
+			else
+				ShowErrorWithLastError(L"OpenProcess");
+		}
+		return NULL;
+	}
+	return hProcess;
+}
+
+
 HANDLE OpenProcessWithVMRead(DWORD pID, BOOLEAN showError)
 {
 	HANDLE hProcess = ::OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, pID);
@@ -33,7 +49,7 @@ HANDLE OpenProcessWithVMRead(DWORD pID, BOOLEAN showError)
 }
 
 
-BOOL GetProcessBasicInformation(DWORD pID, PPROCESS_BASIC_INFORMATION pbi, SIZE_T spbi)
+BOOL GetProcessExtendedBasicInformation(DWORD pID, PPROCESS_EXTENDED_BASIC_INFORMATION pbi, SIZE_T spbi)
 {
 	HMODULE hNtdll = ::LoadLibraryW(L"ntdll.dll");
 	if (hNtdll != NULL) {
@@ -44,7 +60,11 @@ BOOL GetProcessBasicInformation(DWORD pID, PPROCESS_BASIC_INFORMATION pbi, SIZE_
 		HANDLE hProcess = OpenProcessWithQueryLimitedInformation(pID, TRUE);
 		if (hProcess != NULL) {
 			ULONG nRetLen;
+
+			pbi->Size = sizeof(PROCESS_EXTENDED_BASIC_INFORMATION);
+
 			NtQueryInformationProcess(hProcess, ProcessBasicInformation, pbi, spbi, &nRetLen);
+
 			return TRUE;
 		}
 	}
@@ -98,13 +118,14 @@ BOOL GetProcessProtection(DWORD pID, PPROTECTION p)
 
 		return TRUE;
 	}
-
 	return FALSE;
 }
 
 
-void GetProcessMitigation(HANDLE hProcess, PMITIGATION m)
+void GetProcessMitigation(DWORD pID, PMITIGATION m)
 {
+	HANDLE hProcess = OpenProcessWithQueryInformation(pID, FALSE);
+
 	PROCESS_MITIGATION_DEP_POLICY dep{ 0 };
 	if (!::GetProcessMitigationPolicy(hProcess, ProcessDEPPolicy, &dep, sizeof(dep)))
 		m->DEPPolicy = -1;

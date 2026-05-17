@@ -24,9 +24,10 @@ typedef struct _USERINFO {
 
 /* Function Prototype */
 HANDLE OpenProcessWithQueryLimitedInformation(DWORD pID, BOOLEAN showError);
+HANDLE OpenProcessWithQueryInformation(DWORD pID, BOOLEAN showError);
 HANDLE OpenProcessWithVMRead(DWORD pID, BOOLEAN showError);
-void GetProcessMitigation(HANDLE hProcess, PMITIGATION m);
-BOOL GetProcessBasicInformation(DWORD pID, PPROCESS_BASIC_INFORMATION pbi, SIZE_T spbi);
+void GetProcessMitigation(DWORD pID, PMITIGATION m);
+BOOL GetProcessExtendedBasicInformation(DWORD pID, PPROCESS_EXTENDED_BASIC_INFORMATION pbi, SIZE_T spbi);
 BOOL GetProcessEnableLoggingInfo(DWORD pID, PPROCESS_LOGGING_INFORMATION pli, SIZE_T spli);
 BOOL GetProcessProtection(DWORD pID, PPROTECTION p);
 BOOL GetProcessUserInfo(DWORD pID, PUSERINFO pUserInfo);

@@ -453,7 +453,7 @@ void GetProcessList(HWND g_hList)
 			else ::GetModuleFileNameExW(hProcess, nullptr, path, MAX_PATH);
 
 			MITIGATION m = { 0 };
-			GetProcessMitigation(hProcess, &m);
+			GetProcessMitigation(pe.th32ProcessID, &m);
 
 			SecureCloseHandle(hProcess);
 
