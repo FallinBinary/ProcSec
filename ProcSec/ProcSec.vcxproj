@@ -161,16 +161,13 @@
     <ClInclude Include="PEInformation.h" />
     <ClInclude Include="ProcessInformation.h" />
     <ClInclude Include="resource.h" />
-    <ClInclude Include="UndocStructures.h" />
+    <ClInclude Include="Undocuments.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="ProcSec.rc" />
   </ItemGroup>
   <ItemGroup>
     <Manifest Include="ProcSec.manifest" />
-  </ItemGroup>
-  <ItemGroup>
-    <Image Include="icon1.ico" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

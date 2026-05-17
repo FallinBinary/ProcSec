@@ -3,10 +3,10 @@
 
 BOOL GetPebInfo(HWND hDlg, LPWSTR pID, LPWSTR pName)
 {
-	PROCESS_BASIC_INFORMATION pbi = { 0 };
+	PROCESS_EXTENDED_BASIC_INFORMATION pbi = { 0 };
 	PEB peb = { 0 };
 
-	GetProcessBasicInformation(_wtoi(pID), &pbi, sizeof(pbi));
+	GetProcessExtendedBasicInformation(_wtoi(pID), &pbi, sizeof(pbi));
 	HANDLE hProcess = OpenProcessWithVMRead(_wtoi(pID), FALSE);
 
 	if (pbi.PebBaseAddress != 0) {

@@ -68,7 +68,7 @@
     <ClInclude Include="PEInformation.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="UndocStructures.h">
+    <ClInclude Include="Undocuments.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="InjectDll.h">
@@ -84,10 +84,5 @@
     <Manifest Include="ProcSec.manifest">
       <Filter>Resource Files</Filter>
     </Manifest>
-  </ItemGroup>
-  <ItemGroup>
-    <Image Include="icon1.ico">
-      <Filter>Resource Files</Filter>
-    </Image>
   </ItemGroup>
 </Project>
