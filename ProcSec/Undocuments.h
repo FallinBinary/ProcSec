@@ -15,7 +15,9 @@
 
 
 // Status Code
+#define STATUS_SUCCESS              0x00000000
 #define STATUS_INFO_LENGTH_MISMATCH 0xC0000004
+#define STATUS_BUFFER_TOO_SMALL     0xC0000023
 
 
 
@@ -88,6 +90,8 @@ typedef enum _KWAIT_REASON
 enum PROCESSINFOCLASS
 {
     ProcessBasicInformation = 0,
+    ProcessImageFileName = 27,
+    ProcessCommandLineInformation = 60,
     ProcessProtectionInformation = 61,
     ProcessEnableLogging = 96
 };
