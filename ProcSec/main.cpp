@@ -375,14 +375,14 @@ void AddColumns(HWND g_hList)
 }
 
 
-void AddItem(HWND g_hList, int index, PPROCESSENTRY32W pe, wchar_t* path, PMITIGATION m, PPROTECTION p, PUSERINFO u)
+void AddItem(HWND g_hList, int index, PSYSTEM_PROCESS_INFORMATION pi, wchar_t* path, PMITIGATION m, PPROTECTION p, PUSERINFO u)
 {
 	// Process Basic Information
 	wchar_t szPid[16] = { 0 };
-	::wsprintfW(szPid, L"%lu", pe->th32ProcessID);
+	::wsprintfW(szPid, L"%lu", HandleToULong(pi->UniqueProcessId)); //pe->th32ProcessID);
 
 	wchar_t szPpid[16] = { 0 };
-	::wsprintfW(szPpid, L"%lu", pe->th32ParentProcessID);
+	::wsprintfW(szPpid, L"%lu", HandleToULong(pi->InheritedFromUniqueProcessId)); //pe->th32ParentProcessID);
 
 	// Process Protection Information
 	wchar_t szProtection[64] = { 0 };
@@ -408,15 +408,19 @@ void AddItem(HWND g_hList, int index, PPROCESSENTRY32W pe, wchar_t* path, PMITIG
 
 	// Set Items
 	PPROC_ITEM data = (PPROC_ITEM)malloc(sizeof(PROC_ITEM));
-	::wcscpy_s(data->name, pe->szExeFile);
-	data->pid = pe->th32ProcessID;
-	data->ppid = pe->th32ParentProcessID;
+
+	if (pi->ImageName.Buffer) ::wcscpy_s(data->name, pi->ImageName.Buffer); //pe->szExeFile);
+	else if (!(pi->ImageName.Buffer) && HandleToULong(pi->UniqueProcessId) == 0)
+		::wcscpy_s(data->name, L"System Idle Process");
+
+	data->pid = HandleToULong(pi->UniqueProcessId); //pe->th32ProcessID;
+	data->ppid = HandleToULong(pi->InheritedFromUniqueProcessId); //pe->th32ParentProcessID;
 	data->originalIndex = index;
 
 	LVITEMW item = { 0 };
 	item.mask = LVIF_TEXT | LVIF_PARAM;
 	item.iItem = index;
-	item.pszText = pe->szExeFile;
+	item.pszText = data->name; //pe->szExeFile;
 	item.lParam = (LPARAM)data;
 
 	ListView_InsertItem(g_hList, &item);
@@ -430,46 +434,123 @@ void AddItem(HWND g_hList, int index, PPROCESSENTRY32W pe, wchar_t* path, PMITIG
 	ListView_SetItemText(g_hList, index, LV_ASLR, szASLR);
 	ListView_SetItemText(g_hList, index, LV_DEP, szDEP);
 	ListView_SetItemText(g_hList, index, LV_CFG, szCFG);
+
+	if (data)
+		free(data);
 }
 
 
 void GetProcessList(HWND g_hList)
 {
-	HANDLE hSnapshot = ::CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
-	if (hSnapshot == INVALID_HANDLE_VALUE) {
-		ShowErrorWithLastError(L"Process Enumeration");
-		::PostQuitMessage(0);
-	}
+	HMODULE hNtdll = ::LoadLibrary(L"ntdll.dll");
+	if (hNtdll != NULL) {
+		auto NtQuerySystemInformation = (NtQuerySystemInformation_t)::GetProcAddress(hNtdll, "NtQuerySystemInformation");
 
-	PROCESSENTRY32W pe{ pe.dwSize = sizeof(pe) };
-	int index = 0;
+		::FreeLibrary(hNtdll);
 
-	if (::Process32FirstW(hSnapshot, &pe)) {
-		do {
-			wchar_t path[MAX_PATH];
+		HANDLE hHeap = ::GetProcessHeap();
+		PVOID buffer = NULL;
+		ULONG bufferSize = 0x10000;
+		ULONG returnLen = 0;
+		NTSTATUS status;
 
-			HANDLE hProcess = ::OpenProcess(PROCESS_QUERY_INFORMATION, FALSE, pe.th32ProcessID);
-			if (hProcess == NULL) ::wcsncpy_s(path, L"", MAX_PATH);
-			else ::GetModuleFileNameExW(hProcess, nullptr, path, MAX_PATH);
+		for (;;) {
+
+			if (buffer) {
+				::HeapFree(hHeap, 0, buffer);
+				buffer = NULL;
+			}
+
+			buffer = ::HeapAlloc(hHeap, HEAP_ZERO_MEMORY, bufferSize);
+			if (!buffer) return;
+
+			status = NtQuerySystemInformation(SystemProcessInformation, buffer, bufferSize, &returnLen);
+			if (status == STATUS_SUCCESS) break;
+
+			else if (status == STATUS_INFO_LENGTH_MISMATCH || status == STATUS_BUFFER_TOO_SMALL) {
+				if (returnLen > bufferSize)
+					bufferSize = (returnLen + (1 << 12));
+				else bufferSize *= 2;
+			}
+
+			else {
+				if (buffer) ::HeapFree(hHeap, 0, buffer);
+				return;
+			}
+		}
+
+		auto process = (PSYSTEM_PROCESS_INFORMATION)buffer;
+		int processCount = 0;
+
+		for (;;processCount++) {
+
+			WCHAR path[512] = { 0 };
+			GetProcessFilePath(HandleToULong(process->UniqueProcessId), path);
 
 			MITIGATION m = { 0 };
-			GetProcessMitigation(pe.th32ProcessID, &m);
-
-			SecureCloseHandle(hProcess);
+			GetProcessMitigation(HandleToULong(process->UniqueProcessId), &m);
 
 			PROTECTION p = { 0 };
-			GetProcessProtection(pe.th32ProcessID, &p);
+			GetProcessProtection(HandleToULong(process->UniqueProcessId), &p);
 
 			USERINFO u = { 0 };
-			GetProcessUserInfo(pe.th32ProcessID, &u);
+			GetProcessUserInfo(HandleToULong(process->UniqueProcessId), &u);
 
-			AddItem(g_hList, index++, &pe, path, &m, &p, &u);
+			AddItem(g_hList, processCount, process, path, &m, &p, &u);
 
-		} while (::Process32NextW(hSnapshot, &pe));
+			if (process->NextEntryOffset == 0) break;
+			process = (PSYSTEM_PROCESS_INFORMATION)((PUCHAR)process + process->NextEntryOffset);
+		}
 	}
-
-	SecureCloseHandle(hSnapshot);
 }
+
+
+
+
+
+
+
+
+
+
+//
+//
+//
+//	HANDLE hSnapshot = ::CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+//	if (hSnapshot == INVALID_HANDLE_VALUE) {
+//		ShowErrorWithLastError(L"Process Enumeration");
+//		::PostQuitMessage(0);
+//	}
+//
+//	PROCESSENTRY32W pe{ pe.dwSize = sizeof(pe) };
+//	int index = 0;
+//
+//	if (::Process32FirstW(hSnapshot, &pe)) {
+//		do {
+//			wchar_t path[MAX_PATH];
+//
+//			HANDLE hProcess = ::OpenProcess(PROCESS_QUERY_INFORMATION, FALSE, pe.th32ProcessID);
+//			if (hProcess == NULL) ::wcsncpy_s(path, L"", MAX_PATH);
+//			else ::GetModuleFileNameExW(hProcess, nullptr, path, MAX_PATH);
+//
+//			MITIGATION m = { 0 };
+//			GetProcessMitigation(pe.th32ProcessID, &m);
+//
+//			SecureCloseHandle(hProcess);
+//
+//			PROTECTION p = { 0 };
+//			GetProcessProtection(pe.th32ProcessID, &p);
+//
+//			USERINFO u = { 0 };
+//			GetProcessUserInfo(pe.th32ProcessID, &u);
+//
+//			AddItem(g_hList, index++, &pe, path, &m, &p, &u);
+//
+//		} while (::Process32NextW(hSnapshot, &pe));
+//	}
+//
+//	SecureCloseHandle(hSnapshot);
+//}
 
 
 void SetColor(LPNMLVCUSTOMDRAW plvcd)

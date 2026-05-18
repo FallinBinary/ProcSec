@@ -45,7 +45,7 @@ int CALLBACK CompareFunc(LPARAM lParam1, LPARAM lParam2, LPARAM lParamSort);
 int CALLBACK CompareOriginal(LPARAM lParam1, LPARAM lParam2, LPARAM lParamSort);
 
 void AddColumns(HWND hList);
-void AddItem(HWND hList, int index, PPROCESSENTRY32W pe, wchar_t* path, PMITIGATION m, PPROTECTION p, PUSERINFO u);
+void AddItem(HWND g_hList, int index, PSYSTEM_PROCESS_INFORMATION pi, wchar_t* path, PMITIGATION m, PPROTECTION p, PUSERINFO u);
 void GetProcessList(HWND hList);
 void SetColor(LPNMLVCUSTOMDRAW plvcd);
 void ShowPopupMenu(HWND hWnd);
