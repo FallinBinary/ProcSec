@@ -379,10 +379,10 @@ void AddItem(HWND g_hList, int index, PSYSTEM_PROCESS_INFORMATION pi, wchar_t* p
 {
 	// Process Basic Information
 	wchar_t szPid[16] = { 0 };
-	::wsprintfW(szPid, L"%lu", HandleToULong(pi->UniqueProcessId)); //pe->th32ProcessID);
+	::wsprintfW(szPid, L"%lu", HandleToULong(pi->UniqueProcessId));
 
 	wchar_t szPpid[16] = { 0 };
-	::wsprintfW(szPpid, L"%lu", HandleToULong(pi->InheritedFromUniqueProcessId)); //pe->th32ParentProcessID);
+	::wsprintfW(szPpid, L"%lu", HandleToULong(pi->InheritedFromUniqueProcessId));
 
 	// Process Protection Information
 	wchar_t szProtection[64] = { 0 };
@@ -409,18 +409,18 @@ void AddItem(HWND g_hList, int index, PSYSTEM_PROCESS_INFORMATION pi, wchar_t* p
 	// Set Items
 	PPROC_ITEM data = (PPROC_ITEM)malloc(sizeof(PROC_ITEM));
 
-	if (pi->ImageName.Buffer) ::wcscpy_s(data->name, pi->ImageName.Buffer); //pe->szExeFile);
+	if (pi->ImageName.Buffer) ::wcscpy_s(data->name, pi->ImageName.Buffer);
 	else if (!(pi->ImageName.Buffer) && HandleToULong(pi->UniqueProcessId) == 0)
 		::wcscpy_s(data->name, L"System Idle Process");
 
-	data->pid = HandleToULong(pi->UniqueProcessId); //pe->th32ProcessID;
-	data->ppid = HandleToULong(pi->InheritedFromUniqueProcessId); //pe->th32ParentProcessID;
+	data->pid = HandleToULong(pi->UniqueProcessId);
+	data->ppid = HandleToULong(pi->InheritedFromUniqueProcessId);
 	data->originalIndex = index;
 
 	LVITEMW item = { 0 };
 	item.mask = LVIF_TEXT | LVIF_PARAM;
 	item.iItem = index;
-	item.pszText = data->name; //pe->szExeFile;
+	item.pszText = data->name;
 	item.lParam = (LPARAM)data;
 
 	ListView_InsertItem(g_hList, &item);
