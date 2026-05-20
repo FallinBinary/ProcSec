@@ -127,7 +127,12 @@ BOOL GetProcessFilePath(DWORD pID, LPWSTR filename)
 			if (buffer) {
 
 				res = NtQueryInformationProcess(hProcess, ProcessImageFileName, buffer, retLen, &retLen);
-				wcsncpy_s(filename, buffer->Length / sizeof(WCHAR) + 1, buffer->Buffer, buffer->Length / sizeof(WCHAR));
+
+				WCHAR ntPath[512] = { 0 };
+				//WCHAR dosPath[512] = { 0 };
+
+				wcsncpy_s(ntPath, buffer->Length / sizeof(WCHAR) + 1, buffer->Buffer, buffer->Length / sizeof(WCHAR));
+				ConvertNtPathToDosPath(ntPath, filename, 512);
 
 				return TRUE;
 			}
