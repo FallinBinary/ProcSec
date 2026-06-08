@@ -16,6 +16,7 @@ int WINAPI wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, 
 	wcex.lpszClassName = L"ProcSec";
 	wcex.hCursor = ::LoadCursorW(nullptr, IDC_ARROW);
 	wcex.lpszMenuName = MAKEINTRESOURCEW(IDR_MENU1);
+	wcex.hIcon = LoadIconW(hInstance, MAKEINTRESOURCEW(IDI_ICON1));
 
 	::RegisterClassExW(&wcex);
 
@@ -503,54 +504,6 @@ void GetProcessList(HWND g_hList)
 		}
 	}
 }
-
-
-
-
-
-
-
-
-
-
-//
-//
-//
-//	HANDLE hSnapshot = ::CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
-//	if (hSnapshot == INVALID_HANDLE_VALUE) {
-//		ShowErrorWithLastError(L"Process Enumeration");
-//		::PostQuitMessage(0);
-//	}
-//
-//	PROCESSENTRY32W pe{ pe.dwSize = sizeof(pe) };
-//	int index = 0;
-//
-//	if (::Process32FirstW(hSnapshot, &pe)) {
-//		do {
-//			wchar_t path[MAX_PATH];
-//
-//			HANDLE hProcess = ::OpenProcess(PROCESS_QUERY_INFORMATION, FALSE, pe.th32ProcessID);
-//			if (hProcess == NULL) ::wcsncpy_s(path, L"", MAX_PATH);
-//			else ::GetModuleFileNameExW(hProcess, nullptr, path, MAX_PATH);
-//
-//			MITIGATION m = { 0 };
-//			GetProcessMitigation(pe.th32ProcessID, &m);
-//
-//			SecureCloseHandle(hProcess);
-//
-//			PROTECTION p = { 0 };
-//			GetProcessProtection(pe.th32ProcessID, &p);
-//
-//			USERINFO u = { 0 };
-//			GetProcessUserInfo(pe.th32ProcessID, &u);
-//
-//			AddItem(g_hList, index++, &pe, path, &m, &p, &u);
-//
-//		} while (::Process32NextW(hSnapshot, &pe));
-//	}
-//
-//	SecureCloseHandle(hSnapshot);
-//}
 
 
 void SetColor(LPNMLVCUSTOMDRAW plvcd)
