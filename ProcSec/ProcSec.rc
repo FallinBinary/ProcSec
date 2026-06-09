@@ -70,21 +70,6 @@ STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSM
 CAPTION "PEB Information"
 FONT 8, "MS Shell Dlg", 400, 0, 0x1
 BEGIN
-    DEFPUSHBUTTON   "OK",IDOK,362,116,50,14
-    LTEXT           "PEB Address:",IDC_STATIC,14,35,44,8
-    LTEXT           "BeingDebugged:",IDC_STATIC,14,48,54,8
-    LTEXT           "ImageBaseAddress:",IDC_STATIC,14,62,65,8
-    LTEXT           "Ldr:",IDC_STATIC,14,76,14,8
-    LTEXT           "ProcessParameters:",IDC_STATIC,14,89,65,8
-    LTEXT           "-",IDC_STATIC_PEB,61,35,351,8
-    LTEXT           "-",IDC_STATIC_BEINGDEBUGGED,70,48,257,8
-    LTEXT           "-",IDC_STATIC_IMAGEBASE,80,63,332,8
-    LTEXT           "-",IDC_STATIC_LDR,29,77,383,8
-    LTEXT           "-",IDC_STATIC_PARAMETER,81,89,331,22
-    LTEXT           "Process Name:",IDC_STATIC,14,10,48,8
-    LTEXT           "Process ID:",IDC_STATIC,14,22,38,8
-    LTEXT           "-",IDC_STATIC_PEB_PNAME,65,10,246,8
-    LTEXT           "-",IDC_STATIC_PEB_PID,54,23,268,8
 END
 
 IDD_DIALOG_PE DIALOGEX 0, 0, 495, 308

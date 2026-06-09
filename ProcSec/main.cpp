@@ -201,22 +201,47 @@ INT_PTR CALLBACK PEBDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
 	switch (message)
 	{
 	case WM_INITDIALOG: {
-		WCHAR pId[16] = { 0 }, pName[MAX_PATH] = { 0 };
 
+		/**********************************************************************************************/
+		// Initialize List View
+
+		RECT rc;
+		::GetClientRect(hDlg, &rc);
+		TabCtrl_AdjustRect(hDlg, FALSE, &rc);
+
+		::InitCommonControls();
+
+		HWND hPebDialog = ::CreateWindowExW(0, L"STATIC", L"", WS_CHILD | WS_VISIBLE,
+			rc.left, rc.top, rc.right - rc.left, rc.bottom - rc.top, hDlg, 0, g_hInst, 0);
+
+		HWND hTabListView = ::CreateWindowExW(WS_EX_CLIENTEDGE, WC_LISTVIEW, L"", WS_CHILD | WS_VISIBLE | LVS_REPORT,
+			0, 0, rc.right, rc.bottom - 15, hPebDialog, 0, 0, 0);
+
+		ListView_SetExtendedListViewStyle(hTabListView, LVS_EX_FULLROWSELECT | LVS_EX_DOUBLEBUFFER);
+
+		LVCOLUMNW col = { 0 };
+		col.mask = LVCF_TEXT | LVCF_WIDTH;
+
+		col.pszText = const_cast<LPWSTR>(L"Name");
+		col.cx = 150;
+		ListView_InsertColumn(hTabListView, TAB_LV_OPTIONAL_NAME, &col);
+
+		col.pszText = const_cast<LPWSTR>(L"Value");
+		col.cx = 470;
+		ListView_InsertColumn(hTabListView, TAB_LV_OPTIONAL_VALUE, &col);
+
+		/**********************************************************************************************/
+		// Get PEB Info
+
+		WCHAR pId[16] = { 0 }, pName[MAX_PATH] = { 0 };
 		int index = ListView_GetNextItem(g_hList, -1, LVNI_SELECTED);
 
 		ListView_GetItemText(g_hList, index, LV_PID, pId, sizeof(pId));
 		ListView_GetItemText(g_hList, index, LV_PNAME, pName, sizeof(pName));
 
-		GetPebInfo(hDlg, pId, pName);
-
-		break;
+		GetPebInfo(hTabListView, pId, pName);
 	}
-
-	case WM_COMMAND:
-		if (LOWORD(wParam) == IDOK)
-			::EndDialog(hDlg, 0);
-		break;
+	break;
 
 	case WM_CLOSE:
 		::EndDialog(hDlg, 0);
@@ -232,7 +257,7 @@ INT_PTR CALLBACK PEDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 	switch (message)
 	{
 	case WM_INITDIALOG: {
-		g_hTab= ::GetDlgItem(hDlg, IDC_TAB_PE);
+		g_hTab = ::GetDlgItem(hDlg, IDC_TAB_PE);
 		TCITEMW ti = { 0 };
 		ti.mask = TCIF_TEXT;
 

@@ -30,13 +30,47 @@ BOOL GetPebInfo(HWND hDlg, LPWSTR pID, LPWSTR pName)
 		::wsprintfW(pImageBase, L"0x%p", peb.ImageBaseAddress);
 		::wsprintfW(pLdr, L"0x%p", peb.Ldr);
 
-		::SetDlgItemTextW(hDlg, IDC_STATIC_PEB_PNAME, pName);
-		::SetDlgItemTextW(hDlg, IDC_STATIC_PEB_PID, pID);
-		::SetDlgItemTextW(hDlg, IDC_STATIC_PEB, pPEB);
-		::SetDlgItemTextW(hDlg, IDC_STATIC_BEINGDEBUGGED, bBeingDebugged);
-		::SetDlgItemTextW(hDlg, IDC_STATIC_IMAGEBASE, pImageBase);
-		::SetDlgItemTextW(hDlg, IDC_STATIC_LDR, pLdr);
-		::SetDlgItemTextW(hDlg, IDC_STATIC_PARAMETER, pProcessParameter);
+		INT index = 0;
+		WCHAR value[64] = { 0 };
+
+		// SetItem
+		LVITEMW item = { 0 };
+		item.mask = LVIF_TEXT;
+
+		item.iItem = index;
+		item.pszText = const_cast<LPWSTR>(L"Process");
+		ListView_InsertItem(hDlg, &item);
+		ListView_SetItemText(hDlg, index++, 1, const_cast<LPWSTR>(pName));
+
+		item.iItem = index;
+		item.pszText = const_cast<LPWSTR>(L"Process ID");
+		ListView_InsertItem(hDlg, &item);
+		ListView_SetItemText(hDlg, index++, 1, const_cast<LPWSTR>(pID));
+
+		item.iItem = index;
+		item.pszText = const_cast<LPWSTR>(L"PEB Address");
+		ListView_InsertItem(hDlg, &item);
+		ListView_SetItemText(hDlg, index++, 1, const_cast<LPWSTR>(pPEB));
+
+		item.iItem = index;
+		item.pszText = const_cast<LPWSTR>(L"Being Debugged");
+		ListView_InsertItem(hDlg, &item);
+		ListView_SetItemText(hDlg, index++, 1, const_cast<LPWSTR>(bBeingDebugged));
+
+		item.iItem = index;
+		item.pszText = const_cast<LPWSTR>(L"Image Base Address");
+		ListView_InsertItem(hDlg, &item);
+		ListView_SetItemText(hDlg, index++, 1, const_cast<LPWSTR>(pImageBase));
+
+		item.iItem = index;
+		item.pszText = const_cast<LPWSTR>(L"LDR");
+		ListView_InsertItem(hDlg, &item);
+		ListView_SetItemText(hDlg, index++, 1, const_cast<LPWSTR>(pLdr));
+
+		item.iItem = index;
+		item.pszText = const_cast<LPWSTR>(L"Process Parameters");
+		ListView_InsertItem(hDlg, &item);
+		ListView_SetItemText(hDlg, index++, 1, const_cast<LPWSTR>(pProcessParameter));
 
 		SecureCloseHandle(hProcess);
 		return TRUE;
