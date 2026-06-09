@@ -11,6 +11,7 @@
 // Reference: https://ntdoc.m417z.com/kwait_reason
 // Reference: https://ntdoc.m417z.com/kthread_state
 // Reference: https://www.vergiliusproject.com/kernels/x64/windows-11/25h2/_PEB
+// Reference: https://ntdoc.m417z.com/memory_basic_information
 
 
 
@@ -101,6 +102,12 @@ enum SYSTEM_INFORMATION_CLASS
 {
     SystemProcessInformation = 5
 };
+
+
+typedef enum _MEMORY_INFORMATION_CLASS
+{
+    MemoryBasicInformation
+} MEMORY_INFORMATION_CLASS;
 
 
 
@@ -385,3 +392,13 @@ typedef FARPROC(WINAPI* RtlCreateUserThread_t)(
     OUT PHANDLE ThreadHandle,
     OUT PCLIENT_ID ClientId
     );
+
+
+typedef NTSTATUS (NTAPI* NtQueryVirtualMemory_t)(
+    _In_ HANDLE ProcessHandle,
+    _In_opt_ PVOID BaseAddress,
+    _In_ MEMORY_INFORMATION_CLASS MemoryInformationClass,
+    _Out_writes_bytes_(MemoryInformationLength) PVOID MemoryInformation,
+    _In_ SIZE_T MemoryInformationLength,
+    _Out_opt_ PSIZE_T ReturnLength
+);

@@ -6,6 +6,7 @@
 #include "PEInformation.h"
 #include "Dump.h"
 #include "InjectDll.h"
+#include "MemoryInformation.h"
 
 #pragma comment(lib, "comctl32.lib")
 
