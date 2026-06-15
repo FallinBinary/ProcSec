@@ -82,6 +82,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		if (hdr->hwndFrom == g_hList && hdr->code == NM_RCLICK)
 			ShowPopupMenu(hWnd);
 
+		else if (hdr->hwndFrom == g_hList && hdr->code == NM_DBLCLK)
+			::DialogBoxW(g_hInst, MAKEINTRESOURCE(IDD_DIALOG_PROPERTIES), hWnd, PropertiesDialog);
+
 		else if (hdr->hwndFrom == g_hList && hdr->code == LVN_COLUMNCLICK) {
 			NMLISTVIEW* pnmlv = (NMLISTVIEW*)lParam;
 			HWND hHeader = ListView_GetHeader(g_hList);
@@ -139,6 +142,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	case WM_COMMAND:
 		switch (LOWORD(wParam))
 		{
+		case PM_PROPERTIES:
+			::DialogBoxW(g_hInst, MAKEINTRESOURCE(IDD_DIALOG_PROPERTIES), hWnd, PropertiesDialog);
+			break;
+
 		case PM_PEB_INFO:
 			::DialogBoxW(g_hInst, MAKEINTRESOURCE(IDD_DIALOG_PEB), hWnd, PEBDialog);
 			break;
@@ -193,6 +200,87 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		return ::DefWindowProcW(hWnd, message, wParam, lParam);
 	}
 	return 0;
+}
+
+
+INT_PTR CALLBACK PropertiesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
+{
+	switch (message)
+	{
+	case WM_INITDIALOG: {
+		int index = ListView_GetNextItem(g_hList, -1, LVNI_SELECTED);
+
+		WCHAR pName[MAX_PATH] = { 0 }, titleName[MAX_PATH + 32] = { 0 };;
+		ListView_GetItemText(g_hList, index, LV_PID, g_pId, sizeof(g_pId));
+		ListView_GetItemText(g_hList, index, LV_PNAME, pName, sizeof(pName));
+
+		::wsprintfW(titleName, L"%ws (%ws) Properties", pName, g_pId);
+
+		SetWindowTextW(hDlg, titleName);
+		HWND hPropertiesTab = GetDlgItem(hDlg, IDC_PROPERTIES_TAB);
+		TCITEMW ti = { 0 };
+
+		ti.mask = TCIF_TEXT;
+
+		ti.pszText = (LPWSTR)L"Memory";
+		TabCtrl_InsertItem(hPropertiesTab, TAB1, &ti);
+
+		RECT rc;
+		::GetClientRect(hPropertiesTab, &rc);
+		TabCtrl_AdjustRect(hPropertiesTab, FALSE, &rc);
+
+		::InitCommonControls();
+
+		/**********************************************************************************************/
+
+		// Initialize Tab 1
+
+		HWND hTabDialogProperties = ::CreateWindowExW(0, L"STATIC", L"", WS_CHILD | WS_VISIBLE,
+			rc.left, rc.top, rc.right - rc.left, rc.bottom - rc.top, hPropertiesTab, 0, g_hInst, 0);
+
+		g_hTabListViewProperties = ::CreateWindowExW(WS_EX_CLIENTEDGE, WC_LISTVIEW, L"", WS_CHILD | WS_VISIBLE | LVS_REPORT,
+			0, 0, rc.right, rc.bottom - 15, hTabDialogProperties, 0, 0, 0);
+
+		ListView_SetExtendedListViewStyle(g_hTabListViewProperties, LVS_EX_FULLROWSELECT | LVS_EX_DOUBLEBUFFER);
+
+		LVCOLUMNW col = { 0 };
+		col.mask = LVCF_TEXT | LVCF_WIDTH;
+
+		// Set Column for Tab 1
+		col.pszText = const_cast<LPWSTR>(L"Base address");
+		col.cx = 170;
+		ListView_InsertColumn(g_hTabListViewProperties, 0, &col);
+
+		col.pszText = const_cast<LPWSTR>(L"Type");
+		col.cx = 190;
+		ListView_InsertColumn(g_hTabListViewProperties, 1, &col);
+
+		col.pszText = const_cast<LPWSTR>(L"Size");
+		col.cx = 200;
+		ListView_InsertColumn(g_hTabListViewProperties, 2, &col);
+
+		col.pszText = const_cast<LPWSTR>(L"Protection");
+		col.cx = 150;
+		ListView_InsertColumn(g_hTabListViewProperties, 3, &col);
+
+		GetMemoryBasicInformation(g_hTabListViewProperties, _wtoi(g_pId));
+	}
+	break;
+
+	case WM_COMMAND:
+		switch (LOWORD(wParam))
+		{
+		case IDC_PROPERTIES_REFRESH:
+			ListView_DeleteAllItems(g_hTabListViewProperties);
+			GetMemoryBasicInformation(g_hTabListViewProperties, _wtoi(g_pId));
+		}
+		break;
+
+	case WM_CLOSE:
+		::EndDialog(hDlg, 0);
+	}
+
+	return (INT_PTR)FALSE;
 }
 
 
@@ -563,7 +651,8 @@ void SetColor(LPNMLVCUSTOMDRAW plvcd)
 void ShowPopupMenu(HWND hWnd)
 {
 	HMENU hPopupMenu = ::CreatePopupMenu();
-
+	
+	::AppendMenuW(hPopupMenu, MF_STRING, PM_PROPERTIES, L"Properties");
 	::AppendMenuW(hPopupMenu, MF_STRING, PM_PEB_INFO, L"PEB Information");
 	::AppendMenuW(hPopupMenu, MF_STRING, PM_PE_INFO, L"PE Information");
 	::AppendMenuW(hPopupMenu, MF_STRING, PM_DUMP, L"Create Dump");

@@ -24,10 +24,11 @@
 #define LV_CFG     7
 #define LV_PATH    8
 /* Popup Menu MACRO */
-#define PM_PEB_INFO 100
-#define PM_PE_INFO  200
-#define PM_DUMP     300
-#define PM_INJECT	400
+#define PM_PEB_INFO   100
+#define PM_PE_INFO    200
+#define PM_DUMP       300
+#define PM_INJECT	  400
+#define PM_PROPERTIES 500
 /* Tab Macro */
 #define TAB1 1000
 #define TAB2 2000
@@ -42,6 +43,7 @@
 LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK PEBDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
 INT_PTR CALLBACK PEDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
+INT_PTR CALLBACK PropertiesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
 int CALLBACK CompareFunc(LPARAM lParam1, LPARAM lParam2, LPARAM lParamSort);
 int CALLBACK CompareOriginal(LPARAM lParam1, LPARAM lParam2, LPARAM lParamSort);
 
@@ -58,6 +60,8 @@ HWND g_hList;
 HWND g_hTabDialogOptional;
 HWND g_hTabDialogImport;
 HWND g_hTab;
+HWND g_hTabListViewProperties;
+WCHAR g_pId[16];
 
 int g_PreviousSortColumn = -1;
 int g_SortColumn = -1;

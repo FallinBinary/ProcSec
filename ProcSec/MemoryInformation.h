@@ -2,5 +2,10 @@
 
 #include "Header.h"
 
+#define TAB_LV_BASE_ADDRESS 0
+#define TAB_LV_TYPE         1
+#define TAB_LV_SIZE         2
+#define TAB_LV_PROTECT      3
 
-BOOL GetMemoryBasicInformation(DWORD pID, PMEMORY_BASIC_INFORMATION mbi);
+
+BOOL GetMemoryBasicInformation(HWND hTabListViewProperties, DWORD pID);
