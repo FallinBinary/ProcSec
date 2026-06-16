@@ -8,4 +8,4 @@
 #define TAB_LV_PROTECT      3
 
 
-BOOL GetMemoryBasicInformation(HWND hTabListViewProperties, DWORD pID);
+BOOL GetMemoryBasicInformation(HWND hTabListViewMemory, DWORD pID);

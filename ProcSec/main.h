@@ -59,8 +59,10 @@ HINSTANCE g_hInst;
 HWND g_hList;
 HWND g_hTabDialogOptional;
 HWND g_hTabDialogImport;
-HWND g_hTab;
-HWND g_hTabListViewProperties;
+HWND g_hPeTab;
+HWND g_hPropertiesTab;
+HWND g_hTabDialogMemory;
+HWND g_hTabListViewMemory;
 WCHAR g_pId[16];
 
 int g_PreviousSortColumn = -1;

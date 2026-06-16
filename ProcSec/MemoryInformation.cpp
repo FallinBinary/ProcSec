@@ -6,7 +6,7 @@ const wchar_t* ProtectToString(DWORD protect);
 void FormatNumberWithComma(SIZE_T value, WCHAR* out, int outSize);
 
 
-BOOL GetMemoryBasicInformation(HWND hTabListViewProperties, DWORD pID)
+BOOL GetMemoryBasicInformation(HWND hTabListViewMemory, DWORD pID)
 {
 	HMODULE hNtdll = ::LoadLibraryW(L"ntdll.dll");
 	if (hNtdll != NULL) {
@@ -32,22 +32,22 @@ BOOL GetMemoryBasicInformation(HWND hTabListViewProperties, DWORD pID)
 				item.iItem = index;
 				
 				::swprintf_s(value, L"0x%llX", (unsigned long long)mbi.BaseAddress);
-				ListView_InsertItem(hTabListViewProperties, &item);
-				ListView_SetItemText(hTabListViewProperties, index, TAB_LV_BASE_ADDRESS, const_cast<LPWSTR>(value));
+				ListView_InsertItem(hTabListViewMemory, &item);
+				ListView_SetItemText(hTabListViewMemory, index, TAB_LV_BASE_ADDRESS, const_cast<LPWSTR>(value));
 
 				 if (mbi.State != MEM_FREE)
 					::swprintf_s(value, L"%ws: %ws", TypeToString(mbi.Type), StateToString(mbi.State));
 				 else
 					 ::swprintf_s(value, L"%ws", StateToString(mbi.State));
-				ListView_SetItemText(hTabListViewProperties, index, TAB_LV_TYPE, const_cast<LPWSTR>(value));
+				ListView_SetItemText(hTabListViewMemory, index, TAB_LV_TYPE, const_cast<LPWSTR>(value));
 
 				WCHAR size[128], value2[128];
 				FormatNumberWithComma(mbi.RegionSize / 1024, size, 128);
 				::swprintf_s(value2, L"%s kB", size);
-				ListView_SetItemText(hTabListViewProperties, index, TAB_LV_SIZE, const_cast<LPWSTR>(value2));
+				ListView_SetItemText(hTabListViewMemory, index, TAB_LV_SIZE, const_cast<LPWSTR>(value2));
 
 				::swprintf_s(value, L"%ws", ProtectToString(mbi.Protect));
-				ListView_SetItemText(hTabListViewProperties, index, TAB_LV_PROTECT, const_cast<LPWSTR>(value));
+				ListView_SetItemText(hTabListViewMemory, index, TAB_LV_PROTECT, const_cast<LPWSTR>(value));
 
 				index++;
 				address = (PBYTE)mbi.BaseAddress + mbi.RegionSize;

@@ -217,17 +217,17 @@ INT_PTR CALLBACK PropertiesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM
 		::wsprintfW(titleName, L"%ws (%ws) Properties", pName, g_pId);
 
 		SetWindowTextW(hDlg, titleName);
-		HWND hPropertiesTab = GetDlgItem(hDlg, IDC_PROPERTIES_TAB);
+		g_hPropertiesTab = GetDlgItem(hDlg, IDC_PROPERTIES_TAB);
 		TCITEMW ti = { 0 };
 
 		ti.mask = TCIF_TEXT;
 
 		ti.pszText = (LPWSTR)L"Memory";
-		TabCtrl_InsertItem(hPropertiesTab, TAB1, &ti);
+		TabCtrl_InsertItem(g_hPropertiesTab, TAB1, &ti);
 
 		RECT rc;
-		::GetClientRect(hPropertiesTab, &rc);
-		TabCtrl_AdjustRect(hPropertiesTab, FALSE, &rc);
+		::GetClientRect(g_hPropertiesTab, &rc);
+		TabCtrl_AdjustRect(g_hPropertiesTab, FALSE, &rc);
 
 		::InitCommonControls();
 
@@ -235,13 +235,13 @@ INT_PTR CALLBACK PropertiesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM
 
 		// Initialize Tab 1
 
-		HWND hTabDialogProperties = ::CreateWindowExW(0, L"STATIC", L"", WS_CHILD | WS_VISIBLE,
-			rc.left, rc.top, rc.right - rc.left, rc.bottom - rc.top, hPropertiesTab, 0, g_hInst, 0);
+		g_hTabDialogMemory = ::CreateWindowExW(0, L"STATIC", L"", WS_CHILD | WS_VISIBLE,
+			rc.left, rc.top, rc.right - rc.left, rc.bottom - rc.top, g_hPropertiesTab, 0, g_hInst, 0);
 
-		g_hTabListViewProperties = ::CreateWindowExW(WS_EX_CLIENTEDGE, WC_LISTVIEW, L"", WS_CHILD | WS_VISIBLE | LVS_REPORT,
-			0, 0, rc.right, rc.bottom - 15, hTabDialogProperties, 0, 0, 0);
+		g_hTabListViewMemory = ::CreateWindowExW(WS_EX_CLIENTEDGE, WC_LISTVIEW, L"", WS_CHILD | WS_VISIBLE | LVS_REPORT,
+			0, 0, rc.right, rc.bottom - 15, g_hTabDialogMemory, 0, 0, 0);
 
-		ListView_SetExtendedListViewStyle(g_hTabListViewProperties, LVS_EX_FULLROWSELECT | LVS_EX_DOUBLEBUFFER);
+		ListView_SetExtendedListViewStyle(g_hTabListViewMemory, LVS_EX_FULLROWSELECT | LVS_EX_DOUBLEBUFFER);
 
 		LVCOLUMNW col = { 0 };
 		col.mask = LVCF_TEXT | LVCF_WIDTH;
@@ -249,21 +249,21 @@ INT_PTR CALLBACK PropertiesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM
 		// Set Column for Tab 1
 		col.pszText = const_cast<LPWSTR>(L"Base address");
 		col.cx = 170;
-		ListView_InsertColumn(g_hTabListViewProperties, 0, &col);
+		ListView_InsertColumn(g_hTabListViewMemory, 0, &col);
 
 		col.pszText = const_cast<LPWSTR>(L"Type");
 		col.cx = 190;
-		ListView_InsertColumn(g_hTabListViewProperties, 1, &col);
+		ListView_InsertColumn(g_hTabListViewMemory, 1, &col);
 
 		col.pszText = const_cast<LPWSTR>(L"Size");
 		col.cx = 200;
-		ListView_InsertColumn(g_hTabListViewProperties, 2, &col);
+		ListView_InsertColumn(g_hTabListViewMemory, 2, &col);
 
 		col.pszText = const_cast<LPWSTR>(L"Protection");
 		col.cx = 150;
-		ListView_InsertColumn(g_hTabListViewProperties, 3, &col);
+		ListView_InsertColumn(g_hTabListViewMemory, 3, &col);
 
-		GetMemoryBasicInformation(g_hTabListViewProperties, _wtoi(g_pId));
+		GetMemoryBasicInformation(g_hTabListViewMemory, _wtoi(g_pId));
 	}
 	break;
 
@@ -271,8 +271,8 @@ INT_PTR CALLBACK PropertiesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM
 		switch (LOWORD(wParam))
 		{
 		case IDC_PROPERTIES_REFRESH:
-			ListView_DeleteAllItems(g_hTabListViewProperties);
-			GetMemoryBasicInformation(g_hTabListViewProperties, _wtoi(g_pId));
+			ListView_DeleteAllItems(g_hTabListViewMemory);
+ 			GetMemoryBasicInformation(g_hTabListViewMemory, _wtoi(g_pId));
 		}
 		break;
 
@@ -345,19 +345,19 @@ INT_PTR CALLBACK PEDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 	switch (message)
 	{
 	case WM_INITDIALOG: {
-		g_hTab = ::GetDlgItem(hDlg, IDC_TAB_PE);
+		g_hPeTab = ::GetDlgItem(hDlg, IDC_TAB_PE);
 		TCITEMW ti = { 0 };
 		ti.mask = TCIF_TEXT;
 
 		ti.pszText = (LPWSTR)L"Optinal Header";
-		TabCtrl_InsertItem(g_hTab, TAB1, &ti);
+		TabCtrl_InsertItem(g_hPeTab, TAB1, &ti);
 
 		ti.pszText = (LPWSTR)L"Import Table";
-		TabCtrl_InsertItem(g_hTab, TAB2, &ti);
+		TabCtrl_InsertItem(g_hPeTab, TAB2, &ti);
 
 		RECT rc;
-		::GetClientRect(g_hTab, &rc);
-		TabCtrl_AdjustRect(g_hTab, FALSE, &rc);
+		::GetClientRect(g_hPeTab, &rc);
+		TabCtrl_AdjustRect(g_hPeTab, FALSE, &rc);
 
 		::InitCommonControls();
 
@@ -365,7 +365,7 @@ INT_PTR CALLBACK PEDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 
 		// Initialize Tab 1
 		g_hTabDialogOptional = ::CreateWindowExW(0, L"STATIC", L"", WS_CHILD | WS_VISIBLE,
-			rc.left, rc.top, rc.right - rc.left, rc.bottom - rc.top, g_hTab, 0, g_hInst, 0);
+			rc.left, rc.top, rc.right - rc.left, rc.bottom - rc.top, g_hPeTab, 0, g_hInst, 0);
 
 		HWND hTabListViewOptional = ::CreateWindowExW(WS_EX_CLIENTEDGE, WC_LISTVIEW, L"", WS_CHILD | WS_VISIBLE | LVS_REPORT,
 			0, 0, rc.right, rc.bottom - 15, g_hTabDialogOptional, 0, 0, 0);
@@ -388,7 +388,7 @@ INT_PTR CALLBACK PEDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 
 		// Initialize Tab 2
 		g_hTabDialogImport = ::CreateWindowExW(0, L"STATIC", L"", WS_CHILD,
-			rc.left, rc.top, rc.right - rc.left, rc.bottom - rc.top, g_hTab, 0, g_hInst, 0);
+			rc.left, rc.top, rc.right - rc.left, rc.bottom - rc.top, g_hPeTab, 0, g_hInst, 0);
 
 		HWND hTabListViewImport = ::CreateWindowExW(WS_EX_CLIENTEDGE, WC_LISTVIEW, L"", WS_CHILD | WS_VISIBLE | LVS_REPORT,
 			0, 0, rc.right, rc.bottom - 15, g_hTabDialogImport, 0, 0, 0);
@@ -429,7 +429,7 @@ INT_PTR CALLBACK PEDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 
 	case WM_NOTIFY: {
 		if (((LPNMHDR)lParam)->idFrom == IDC_TAB_PE && ((LPNMHDR)lParam)->code == TCN_SELCHANGE) {
-			int i = TabCtrl_GetCurSel(g_hTab);
+			int i = TabCtrl_GetCurSel(g_hPeTab);
 
 			::ShowWindow(g_hTabDialogOptional, i == 0 ? SW_SHOW : SW_HIDE);
 			::ShowWindow(g_hTabDialogImport, i == 1 ? SW_SHOW : SW_HIDE);
