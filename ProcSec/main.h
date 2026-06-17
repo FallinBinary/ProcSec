@@ -7,6 +7,7 @@
 #include "Dump.h"
 #include "InjectDll.h"
 #include "MemoryInformation.h"
+#include "ModuleInformation.h"
 
 #pragma comment(lib, "comctl32.lib")
 
@@ -57,12 +58,17 @@ void ShowPopupMenu(HWND hWnd);
 /* Global Variables */
 HINSTANCE g_hInst;
 HWND g_hList;
+// =========================
+HWND g_hPeTab;
 HWND g_hTabDialogOptional;
 HWND g_hTabDialogImport;
-HWND g_hPeTab;
+// =========================
 HWND g_hPropertiesTab;
+HWND g_hTabDialogModules;
+HWND g_hTabListViewModules;
 HWND g_hTabDialogMemory;
 HWND g_hTabListViewMemory;
+// =========================
 WCHAR g_pId[16];
 
 int g_PreviousSortColumn = -1;

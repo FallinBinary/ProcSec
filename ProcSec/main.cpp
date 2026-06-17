@@ -3,6 +3,7 @@
 
 int WINAPI wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ LPWSTR lpCmdLine, _In_ int nCmdShow)
 {
+	//GetProcessModuleInformation(19376);
 	UNREFERENCED_PARAMETER(hPrevInstance);
 	UNREFERENCED_PARAMETER(lpCmdLine);
 
@@ -222,8 +223,11 @@ INT_PTR CALLBACK PropertiesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM
 
 		ti.mask = TCIF_TEXT;
 
-		ti.pszText = (LPWSTR)L"Memory";
+		ti.pszText = (LPWSTR)L"Modules";
 		TabCtrl_InsertItem(g_hPropertiesTab, TAB1, &ti);
+		
+		ti.pszText = (LPWSTR)L"Memory";
+		TabCtrl_InsertItem(g_hPropertiesTab, TAB2, &ti);
 
 		RECT rc;
 		::GetClientRect(g_hPropertiesTab, &rc);
@@ -235,7 +239,41 @@ INT_PTR CALLBACK PropertiesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM
 
 		// Initialize Tab 1
 
-		g_hTabDialogMemory = ::CreateWindowExW(0, L"STATIC", L"", WS_CHILD | WS_VISIBLE,
+		g_hTabDialogModules = ::CreateWindowExW(0, L"STATIC", L"", WS_CHILD | WS_VISIBLE,
+			rc.left, rc.top, rc.right - rc.left, rc.bottom - rc.top, g_hPropertiesTab, 0, g_hInst, 0);
+
+		g_hTabListViewModules = ::CreateWindowExW(WS_EX_CLIENTEDGE, WC_LISTVIEW, L"", WS_CHILD | WS_VISIBLE | LVS_REPORT,
+			0, 0, rc.right, rc.bottom - 15, g_hTabDialogModules, 0, 0, 0);
+
+		ListView_SetExtendedListViewStyle(g_hTabListViewModules, LVS_EX_FULLROWSELECT | LVS_EX_DOUBLEBUFFER);
+
+		LVCOLUMNW col = { 0 };
+		col.mask = LVCF_TEXT | LVCF_WIDTH;
+
+		// Set Column for Tab 1
+		col.pszText = const_cast<LPWSTR>(L"Name");
+		col.cx = 150;
+		ListView_InsertColumn(g_hTabListViewModules, 0, &col);
+
+		col.pszText = const_cast<LPWSTR>(L"Base address");
+		col.cx = 135;
+		ListView_InsertColumn(g_hTabListViewModules, 1, &col);
+
+		col.pszText = const_cast<LPWSTR>(L"Size");
+		col.cx = 80;
+		ListView_InsertColumn(g_hTabListViewModules, 2, &col);
+
+		col.pszText = const_cast<LPWSTR>(L"Path");
+		col.cx = 345;
+		ListView_InsertColumn(g_hTabListViewModules, 3, &col);
+
+		GetProcessModuleInformation(g_hTabListViewModules, _wtoi(g_pId));
+
+		/**********************************************************************************************/
+
+		// Initialize Tab 2
+
+		g_hTabDialogMemory = ::CreateWindowExW(0, L"STATIC", L"", WS_CHILD,
 			rc.left, rc.top, rc.right - rc.left, rc.bottom - rc.top, g_hPropertiesTab, 0, g_hInst, 0);
 
 		g_hTabListViewMemory = ::CreateWindowExW(WS_EX_CLIENTEDGE, WC_LISTVIEW, L"", WS_CHILD | WS_VISIBLE | LVS_REPORT,
@@ -243,10 +281,7 @@ INT_PTR CALLBACK PropertiesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM
 
 		ListView_SetExtendedListViewStyle(g_hTabListViewMemory, LVS_EX_FULLROWSELECT | LVS_EX_DOUBLEBUFFER);
 
-		LVCOLUMNW col = { 0 };
-		col.mask = LVCF_TEXT | LVCF_WIDTH;
-
-		// Set Column for Tab 1
+		// Set Column for Tab 2
 		col.pszText = const_cast<LPWSTR>(L"Base address");
 		col.cx = 170;
 		ListView_InsertColumn(g_hTabListViewMemory, 0, &col);
@@ -275,6 +310,16 @@ INT_PTR CALLBACK PropertiesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM
  			GetMemoryBasicInformation(g_hTabListViewMemory, _wtoi(g_pId));
 		}
 		break;
+
+	case WM_NOTIFY: {
+		if (((LPNMHDR)lParam)->idFrom == IDC_PROPERTIES_TAB && ((LPNMHDR)lParam)->code == TCN_SELCHANGE) {
+			int i = TabCtrl_GetCurSel(g_hPropertiesTab);
+
+			::ShowWindow(g_hTabDialogModules, i == 0 ? SW_SHOW : SW_HIDE);
+			::ShowWindow(g_hTabDialogMemory, i == 1 ? SW_SHOW : SW_HIDE);
+		}
+		break;
+	}
 
 	case WM_CLOSE:
 		::EndDialog(hDlg, 0);

@@ -147,6 +147,7 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="MemoryInformation.cpp" />
     <ClCompile Include="Miscellaneous.cpp" />
+    <ClCompile Include="ModuleInformation.cpp" />
     <ClCompile Include="PEBInformation.cpp" />
     <ClCompile Include="PEInformation.cpp" />
     <ClCompile Include="ProcessInformation.cpp" />
@@ -159,6 +160,7 @@
     <ClInclude Include="main.h" />
     <ClInclude Include="MemoryInformation.h" />
     <ClInclude Include="Miscellaneous.h" />
+    <ClInclude Include="ModuleInformation.h" />
     <ClInclude Include="PEBInformation.h" />
     <ClInclude Include="PEInformation.h" />
     <ClInclude Include="ProcessInformation.h" />
