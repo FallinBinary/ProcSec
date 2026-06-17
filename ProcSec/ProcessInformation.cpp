@@ -102,6 +102,8 @@ BOOL EnumProc()
 			if (process->NextEntryOffset == 0) break;
 			process = (PSYSTEM_PROCESS_INFORMATION)((PUCHAR)process + process->NextEntryOffset);
 		}
+
+		::HeapFree(hHeap, 0, buffer);
 		return TRUE;
 	}
 	return FALSE;
@@ -134,8 +136,11 @@ BOOL GetProcessFilePath(DWORD pID, LPWSTR filename)
 				wcsncpy_s(ntPath, buffer->Length / sizeof(WCHAR) + 1, buffer->Buffer, buffer->Length / sizeof(WCHAR));
 				ConvertNtPathToDosPath(ntPath, filename, 512);
 
+				::HeapFree(::GetProcessHeap(), 0, buffer);
 				return TRUE;
 			}
+
+			SecureCloseHandle(hProcess);
 		}
 	}
 	return FALSE;
@@ -163,8 +168,11 @@ BOOL GetProcessCommandLine(DWORD pID, LPWSTR cmdline)
 				res = NtQueryInformationProcess(hProcess, ProcessCommandLineInformation, buffer, retLen, &retLen);
 				wcsncpy_s(cmdline, buffer->Length / sizeof(WCHAR) + 1, buffer->Buffer, buffer->Length / sizeof(WCHAR));
 
+				::HeapFree(::GetProcessHeap(), 0, buffer);
 				return TRUE;
 			}
+
+			SecureCloseHandle(hProcess);
 		}
 	}
 	return FALSE;
@@ -187,6 +195,7 @@ BOOL GetProcessExtendedBasicInformation(DWORD pID, PPROCESS_EXTENDED_BASIC_INFOR
 
 			NtQueryInformationProcess(hProcess, ProcessBasicInformation, pbi, spbi, &nRetLen);
 
+			SecureCloseHandle(hProcess);
 			return TRUE;
 		}
 	}
@@ -206,6 +215,8 @@ BOOL GetProcessEnableLoggingInfo(DWORD pID, PPROCESS_LOGGING_INFORMATION pli, SI
 		if (hProcess != NULL) {
 			ULONG nRetLen = 0;
 			NTSTATUS res = NtQueryInformationProcess(hProcess, ProcessEnableLogging, pli, spli, &nRetLen);
+
+			SecureCloseHandle(hProcess);
 			return TRUE;
 		}
 	}
@@ -297,6 +308,8 @@ BOOL GetProcessUserInfo(DWORD pID, PUSERINFO pUserInfo)
 
 			return TRUE;
 		}
+
+		SecureCloseHandle(hProcess);
 	}
 	return FALSE;
 }

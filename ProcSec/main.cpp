@@ -660,6 +660,8 @@ void GetProcessList(HWND g_hList)
 			if (process->NextEntryOffset == 0) break;
 			process = (PSYSTEM_PROCESS_INFORMATION)((PUCHAR)process + process->NextEntryOffset);
 		}
+
+		::HeapFree(hHeap, 0, buffer);
 	}
 }
 
