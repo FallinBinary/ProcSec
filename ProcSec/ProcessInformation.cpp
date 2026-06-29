@@ -49,6 +49,22 @@ HANDLE OpenProcessWithVMRead(DWORD pID, BOOLEAN showError)
 }
 
 
+HANDLE OpenProcessWithDup(DWORD pID, BOOLEAN showError)
+{
+	HANDLE hProcess = ::OpenProcess(PROCESS_DUP_HANDLE, FALSE, pID);
+	if (hProcess == NULL) {
+		if (showError == TRUE) {
+			if (::GetLastError() == ERROR_ACCESS_DENIED)
+				::MessageBoxW(nullptr, L"Error: Access is denied.", L"Process Security", MB_OK | MB_ICONERROR);
+			else
+				ShowErrorWithLastError(L"OpenProcess");
+		}
+		return NULL;
+	}
+	return hProcess;
+}
+
+
 BOOL EnumProc()
 {
 	HMODULE hNtdll = ::LoadLibrary(L"ntdll.dll");
@@ -96,7 +112,7 @@ BOOL EnumProc()
 
 		for (;;processCount++) {
 
-			GetProcessFilePath(HandleToULong(process->UniqueProcessId), filename);
+			GetProcessFilePath(HandleToULong(process->UniqueProcessId), filename, nullptr, FALSE);
 			GetProcessCommandLine(HandleToULong(process->UniqueProcessId), cmdline);
 
 			if (process->NextEntryOffset == 0) break;
@@ -110,7 +126,7 @@ BOOL EnumProc()
 }
 
 
-BOOL GetProcessFilePath(DWORD pID, LPWSTR filename)
+BOOL GetProcessFilePath(DWORD pID, LPWSTR filename, HANDLE ProcessHandle, BOOLEAN UseHandle)
 {
 	HMODULE hNtdll = ::LoadLibraryW(L"ntdll.dll");
 	if (hNtdll != NULL) {
@@ -118,7 +134,11 @@ BOOL GetProcessFilePath(DWORD pID, LPWSTR filename)
 
 		::FreeLibrary(hNtdll);
 
-		HANDLE hProcess = OpenProcessWithQueryLimitedInformation(pID, FALSE);
+		HANDLE hProcess = nullptr;
+
+		if (UseHandle) hProcess = ProcessHandle;
+		else hProcess = OpenProcessWithQueryLimitedInformation(pID, FALSE);
+
 		if (hProcess != NULL) {
 
 			ULONG retLen;
@@ -137,10 +157,12 @@ BOOL GetProcessFilePath(DWORD pID, LPWSTR filename)
 				ConvertNtPathToDosPath(ntPath, filename, 512);
 
 				::HeapFree(::GetProcessHeap(), 0, buffer);
+
+				if (!UseHandle)
+					SecureCloseHandle(hProcess);
+
 				return TRUE;
 			}
-
-			SecureCloseHandle(hProcess);
 		}
 	}
 	return FALSE;
@@ -283,7 +305,7 @@ BOOL GetProcessMitigation(DWORD pID, PMITIGATION m)
 }
 
 
-BOOL GetProcessUserInfo(DWORD pID, PUSERINFO pUserInfo)
+BOOL GetProcessUserInfo(DWORD pID, PUSERINFO pUserInfo, HANDLE TokenHandle, BOOLEAN UseHandle)
 {
 	HANDLE hToken = 0;
 	DWORD retLen = 0;
@@ -294,22 +316,30 @@ BOOL GetProcessUserInfo(DWORD pID, PUSERINFO pUserInfo)
 	WCHAR domainName[DNLEN + 1] = { 0 };
 	DWORD domainNameSize = _countof(domainName);
 	SID_NAME_USE use;
+	HANDLE hProcess = nullptr; 
+	
+	if (!UseHandle)
+		hProcess = OpenProcessWithQueryLimitedInformation(pID, FALSE);
 
-	HANDLE hProcess = OpenProcessWithQueryLimitedInformation(pID, FALSE);
-	if (hProcess != NULL) {
+	if (hProcess != NULL || UseHandle) {
 
-		if (::OpenProcessToken(hProcess, TOKEN_QUERY, &hToken)) {
+		if (UseHandle) hToken = TokenHandle;
+		else ::OpenProcessToken(hProcess, TOKEN_QUERY, &hToken);
 
+		SecureCloseHandle(hProcess);
+
+		if (hToken) {
 			::GetTokenInformation(hToken, TokenUser, &buffer, sizeof(buffer), &retLen);
 			PTOKEN_USER tUser = (PTOKEN_USER)buffer;
 
 			::ConvertSidToStringSidW(tUser->User.Sid, (LPWSTR*)&stringSid);
 			::LookupAccountSidW(nullptr, tUser->User.Sid, pUserInfo->UserName, &userNameSize, pUserInfo->DomainName, &domainNameSize, &use);
 
+			if (!UseHandle)
+				SecureCloseHandle(hToken);
+
 			return TRUE;
 		}
-
-		SecureCloseHandle(hProcess);
 	}
 	return FALSE;
 }
@@ -333,8 +363,8 @@ BOOL IsOwnProcess(DWORD pID)
 {
 	USERINFO currentUserInfo = { 0 };
 	USERINFO targetUserInfo = { 0 };
-	GetProcessUserInfo(GetCurrentProcessId(), &currentUserInfo);
-	GetProcessUserInfo(pID, &targetUserInfo);
+	GetProcessUserInfo(GetCurrentProcessId(), &currentUserInfo, nullptr, FALSE);
+	GetProcessUserInfo(pID, &targetUserInfo, nullptr, FALSE);
 
 	if (!_wcsnicmp(currentUserInfo.UserName, targetUserInfo.UserName, sizeof(currentUserInfo.UserName)))
 		if (!_wcsnicmp(currentUserInfo.DomainName, targetUserInfo.DomainName, sizeof(currentUserInfo.DomainName)))

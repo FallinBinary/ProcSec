@@ -26,16 +26,17 @@ typedef struct _USERINFO {
 HANDLE OpenProcessWithQueryLimitedInformation(DWORD pID, BOOLEAN showError);
 HANDLE OpenProcessWithQueryInformation(DWORD pID, BOOLEAN showError);
 HANDLE OpenProcessWithVMRead(DWORD pID, BOOLEAN showError);
+HANDLE OpenProcessWithDup(DWORD pID, BOOLEAN showError);
 ////////////////////////////////////////////////////////////////////////////
 BOOL EnumProc();
 ////////////////////////////////////////////////////////////////////////////
 BOOL GetProcessMitigation(DWORD pID, PMITIGATION m);
-BOOL GetProcessFilePath(DWORD pID, LPWSTR filename);
+BOOL GetProcessFilePath(DWORD pID, LPWSTR filename, HANDLE ProcessHandle, BOOLEAN UseHandle);
 BOOL GetProcessCommandLine(DWORD pID, LPWSTR cmdline);
 BOOL GetProcessExtendedBasicInformation(DWORD pID, PPROCESS_EXTENDED_BASIC_INFORMATION pbi, SIZE_T spbi);
 BOOL GetProcessEnableLoggingInfo(DWORD pID, PPROCESS_LOGGING_INFORMATION pli, SIZE_T spli);
 BOOL GetProcessProtection(DWORD pID, PPROTECTION p);
-BOOL GetProcessUserInfo(DWORD pID, PUSERINFO pUserInfo);
+BOOL GetProcessUserInfo(DWORD pID, PUSERINFO pUserInfo, HANDLE ProcessHandle, BOOLEAN UseHandle);
 ////////////////////////////////////////////////////////////////////////////
 BOOL IsProcess32(DWORD pID);
 BOOL IsOwnProcess(DWORD pID);
