@@ -13,6 +13,9 @@ This project was created to practice Windows API programming, GUI development, a
 ![Main Window](Screenshots/ProcSec.png)
 ![PEB View](Screenshots/PEBInformation.png)
 ![PE View](Screenshots/PEInformation.png)
+![Module View](Screenshots/ModuleInformation.png)
+![Memory View](Screenshots/MemoryInformation.png)
+![Handle View](Screenshots/HandleInformation.png)
 
 ---
 
@@ -26,6 +29,9 @@ This project was created to practice Windows API programming, GUI development, a
 - DLL injector
 - Show simplified PE information
 - Basic PEB inspection
+- Enumerate and display process memory regions
+- Enumerate and display loaded modules
+- Enumerate and display process handles
 - GUI interface written with Visual Studio 2022
 
 ---
