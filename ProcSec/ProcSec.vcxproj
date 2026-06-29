@@ -143,6 +143,7 @@
   <ItemGroup>
     <ClCompile Include="DebugPrivilege.cpp" />
     <ClCompile Include="Dump.cpp" />
+    <ClCompile Include="HandleInformation.cpp" />
     <ClCompile Include="InjectDll.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="MemoryInformation.cpp" />
@@ -155,6 +156,7 @@
   <ItemGroup>
     <ClInclude Include="DebugPrivilege.h" />
     <ClInclude Include="Dump.h" />
+    <ClInclude Include="HandleInformation.h" />
     <ClInclude Include="Header.h" />
     <ClInclude Include="InjectDll.h" />
     <ClInclude Include="main.h" />

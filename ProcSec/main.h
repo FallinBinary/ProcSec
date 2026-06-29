@@ -8,6 +8,7 @@
 #include "InjectDll.h"
 #include "MemoryInformation.h"
 #include "ModuleInformation.h"
+#include "HandleInformation.h"
 
 #pragma comment(lib, "comctl32.lib")
 
@@ -33,6 +34,7 @@
 /* Tab Macro */
 #define TAB1 1000
 #define TAB2 2000
+#define TAB3 3000
 #define TAB_LV_OPTIONAL_NAME   0
 #define TAB_LV_OPTIONAL_VALUE  1
 #define TAB_LV_IMPORT_DLLNAME  0
@@ -68,6 +70,8 @@ HWND g_hTabDialogModules;
 HWND g_hTabListViewModules;
 HWND g_hTabDialogMemory;
 HWND g_hTabListViewMemory;
+HWND g_hTabDialogHandle;
+HWND g_hTabListViewHandle;
 // =========================
 WCHAR g_pId[16];
 

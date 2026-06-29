@@ -100,7 +100,8 @@ enum PROCESSINFOCLASS
 
 enum SYSTEM_INFORMATION_CLASS
 {
-    SystemProcessInformation = 5
+    SystemProcessInformation = 5,
+    SystemExtendedHandleInformation = 64
 };
 
 
@@ -108,6 +109,13 @@ typedef enum _MEMORY_INFORMATION_CLASS
 {
     MemoryBasicInformation
 } MEMORY_INFORMATION_CLASS;
+
+
+typedef enum _OBJECT_INFORMATION_CLASS
+{
+    ObjectNameInformation = 1,
+    ObjectTypeInformation = 2
+} OBJECT_INFORMATION_CLASS;
 
 
 
@@ -413,6 +421,61 @@ typedef struct _SYSTEM_PROCESS_INFORMATION
 } SYSTEM_PROCESS_INFORMATION, * PSYSTEM_PROCESS_INFORMATION;
 
 
+typedef struct _SYSTEM_HANDLE_TABLE_ENTRY_INFO_EX
+{
+    PVOID Object;
+    HANDLE UniqueProcessId;
+    HANDLE HandleValue;
+    ACCESS_MASK GrantedAccess;
+    USHORT CreatorBackTraceIndex;
+    USHORT ObjectTypeIndex;
+    ULONG HandleAttributes;
+    ULONG Reserved;
+} SYSTEM_HANDLE_TABLE_ENTRY_INFO_EX, * PSYSTEM_HANDLE_TABLE_ENTRY_INFO_EX;
+
+
+typedef struct _SYSTEM_HANDLE_INFORMATION_EX
+{
+    ULONG_PTR NumberOfHandles;
+    ULONG_PTR Reserved;
+    SYSTEM_HANDLE_TABLE_ENTRY_INFO_EX Handles[1];
+} SYSTEM_HANDLE_INFORMATION_EX, * PSYSTEM_HANDLE_INFORMATION_EX;
+
+
+typedef struct _OBJECT_TYPE_INFORMATION
+{
+    UNICODE_STRING TypeName;
+    ULONG TotalNumberOfObjects;
+    ULONG TotalNumberOfHandles;
+    ULONG TotalPagedPoolUsage;
+    ULONG TotalNonPagedPoolUsage;
+    ULONG TotalNamePoolUsage;
+    ULONG TotalHandleTableUsage;
+    ULONG HighWaterNumberOfObjects;
+    ULONG HighWaterNumberOfHandles;
+    ULONG HighWaterPagedPoolUsage;
+    ULONG HighWaterNonPagedPoolUsage;
+    ULONG HighWaterNamePoolUsage;
+    ULONG HighWaterHandleTableUsage;
+    ULONG InvalidAttributes;
+    GENERIC_MAPPING GenericMapping;
+    ULONG ValidAccessMask;
+    BOOLEAN SecurityRequired;
+    BOOLEAN MaintainHandleCount;
+    UCHAR TypeIndex; // since WINBLUE
+    CHAR ReservedByte;
+    ULONG PoolType;
+    ULONG DefaultPagedPoolCharge;
+    ULONG DefaultNonPagedPoolCharge;
+} OBJECT_TYPE_INFORMATION, * POBJECT_TYPE_INFORMATION;
+
+
+typedef struct _OBJECT_NAME_INFORMATION
+{
+    UNICODE_STRING Name; // The object name (when present) includes a NULL-terminator and all path separators "\" in the name.
+} OBJECT_NAME_INFORMATION, * POBJECT_NAME_INFORMATION;
+
+
 
 // APIs Prototype
 typedef NTSTATUS(NTAPI* NtQueryInformationProcess_t)(
@@ -453,4 +516,24 @@ typedef NTSTATUS (NTAPI* NtQueryVirtualMemory_t)(
     _Out_writes_bytes_(MemoryInformationLength) PVOID MemoryInformation,
     _In_ SIZE_T MemoryInformationLength,
     _Out_opt_ PSIZE_T ReturnLength
+);
+
+
+typedef NTSTATUS (NTAPI* NtQueryObject_t)(
+    _In_opt_ HANDLE Handle,
+    _In_ OBJECT_INFORMATION_CLASS ObjectInformationClass,
+    _Out_writes_bytes_opt_(ObjectInformationLength) PVOID ObjectInformation,
+    _In_ ULONG ObjectInformationLength,
+    _Out_opt_ PULONG ReturnLength
+);
+
+
+typedef NTSTATUS (NTAPI* NtDuplicateObject_t)(
+    _In_ HANDLE SourceProcessHandle,
+    _In_ HANDLE SourceHandle,
+    _In_opt_ HANDLE TargetProcessHandle,
+    _Out_opt_ PHANDLE TargetHandle,
+    _In_ ACCESS_MASK DesiredAccess,
+    _In_ ULONG HandleAttributes,
+    _In_ ULONG Options
 );

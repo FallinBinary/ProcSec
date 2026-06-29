@@ -229,6 +229,9 @@ INT_PTR CALLBACK PropertiesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM
 		ti.pszText = (LPWSTR)L"Memory";
 		TabCtrl_InsertItem(g_hPropertiesTab, TAB2, &ti);
 
+		ti.pszText = (LPWSTR)L"Handles";
+		TabCtrl_InsertItem(g_hPropertiesTab, TAB3, &ti);
+
 		RECT rc;
 		::GetClientRect(g_hPropertiesTab, &rc);
 		TabCtrl_AdjustRect(g_hPropertiesTab, FALSE, &rc);
@@ -299,6 +302,37 @@ INT_PTR CALLBACK PropertiesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM
 		ListView_InsertColumn(g_hTabListViewMemory, 3, &col);
 
 		GetMemoryBasicInformation(g_hTabListViewMemory, _wtoi(g_pId));
+
+		/**********************************************************************************************/
+
+		// Initialize Tab 3
+
+		g_hTabDialogHandle = ::CreateWindowExW(0, L"STATIC", L"", WS_CHILD,
+			rc.left, rc.top, rc.right - rc.left, rc.bottom - rc.top, g_hPropertiesTab, 0, g_hInst, 0);
+
+		g_hTabListViewHandle = ::CreateWindowExW(WS_EX_CLIENTEDGE, WC_LISTVIEW, L"", WS_CHILD | WS_VISIBLE | LVS_REPORT,
+			0, 0, rc.right, rc.bottom - 15, g_hTabDialogHandle, 0, 0, 0);
+
+		ListView_SetExtendedListViewStyle(g_hTabListViewHandle, LVS_EX_FULLROWSELECT | LVS_EX_DOUBLEBUFFER);
+
+		// Set Column for Tab 3
+		col.pszText = const_cast<LPWSTR>(L"Type");
+		col.cx = 170;
+		ListView_InsertColumn(g_hTabListViewHandle, 0, &col);
+
+		col.pszText = const_cast<LPWSTR>(L"Name");
+		col.cx = 340;
+		ListView_InsertColumn(g_hTabListViewHandle, 1, &col);
+
+		col.pszText = const_cast<LPWSTR>(L"Handle");
+		col.cx = 100;
+		ListView_InsertColumn(g_hTabListViewHandle, 2, &col);
+
+		col.pszText = const_cast<LPWSTR>(L"Granted Access");
+		col.cx = 100;
+		ListView_InsertColumn(g_hTabListViewHandle, 3, &col);
+
+		GetHandleObjectInformation(g_hTabListViewHandle, _wtoi(g_pId));
 	}
 	break;
 
@@ -307,7 +341,11 @@ INT_PTR CALLBACK PropertiesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM
 		{
 		case IDC_PROPERTIES_REFRESH:
 			ListView_DeleteAllItems(g_hTabListViewMemory);
+			ListView_DeleteAllItems(g_hTabListViewModules);
+			ListView_DeleteAllItems(g_hTabListViewHandle);
  			GetMemoryBasicInformation(g_hTabListViewMemory, _wtoi(g_pId));
+			GetProcessModuleInformation(g_hTabListViewModules, _wtoi(g_pId));
+			GetHandleObjectInformation(g_hTabListViewHandle, _wtoi(g_pId));
 		}
 		break;
 
@@ -317,12 +355,20 @@ INT_PTR CALLBACK PropertiesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM
 
 			::ShowWindow(g_hTabDialogModules, i == 0 ? SW_SHOW : SW_HIDE);
 			::ShowWindow(g_hTabDialogMemory, i == 1 ? SW_SHOW : SW_HIDE);
+			::ShowWindow(g_hTabDialogHandle, i == 2 ? SW_SHOW : SW_HIDE);
 		}
 		break;
 	}
 
 	case WM_CLOSE:
 		::EndDialog(hDlg, 0);
+		g_hPropertiesTab      = nullptr;
+		g_hTabDialogModules   = nullptr;
+		g_hTabListViewModules = nullptr;
+		g_hTabDialogMemory    = nullptr;
+		g_hTabListViewMemory  = nullptr;
+		g_hTabDialogHandle    = nullptr;
+		g_hTabListViewHandle  = nullptr;
 	}
 
 	return (INT_PTR)FALSE;
@@ -484,6 +530,9 @@ INT_PTR CALLBACK PEDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 
 	case WM_CLOSE:
 		::EndDialog(hDlg, 0);
+		g_hPeTab             = nullptr;
+		g_hTabDialogOptional = nullptr;
+		g_hTabDialogImport   = nullptr;
 		break;
 	}
 
@@ -644,7 +693,7 @@ void GetProcessList(HWND g_hList)
 		for (;;processCount++) {
 
 			WCHAR path[512] = { 0 };
-			GetProcessFilePath(HandleToULong(process->UniqueProcessId), path);
+			GetProcessFilePath(HandleToULong(process->UniqueProcessId), path, nullptr, FALSE);
 
 			MITIGATION m = { 0 };
 			GetProcessMitigation(HandleToULong(process->UniqueProcessId), &m);
@@ -653,7 +702,7 @@ void GetProcessList(HWND g_hList)
 			GetProcessProtection(HandleToULong(process->UniqueProcessId), &p);
 
 			USERINFO u = { 0 };
-			GetProcessUserInfo(HandleToULong(process->UniqueProcessId), &u);
+			GetProcessUserInfo(HandleToULong(process->UniqueProcessId), &u, nullptr, FALSE);
 
 			AddItem(g_hList, processCount, process, path, &m, &p, &u);
 
